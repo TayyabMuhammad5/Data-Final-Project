@@ -158,7 +158,7 @@ int main()
     playersNo.loadFromFile("images/No of Players.png");
     Sprite logSp(log), signSp(sign),playerSp(playersNo);
     Clock clock;
-    int state = -1,noOfPlayers;
+    int state = -1,noOfPlayers,playeri=0;
     sf::Font font;
     Authentiacation auth;
     string username = "", password = "";
@@ -203,7 +203,7 @@ int main()
                 int tileX = x / ts;
                 int tileY = y / ts;
                 cout << tileX << " " << tileY << endl;
-                if (state == 0) {
+                if (state == 0 ) {
                     if (tileX >= 21 && tileX < 25 && tileY >= 27 && tileY < 29) {
                         state = 1;
                     }
@@ -242,7 +242,16 @@ int main()
                                 password = "";
                             }
                             else {
-                                state = 2;
+                                playeri++;
+                                if (playeri == noOfPlayers) {
+                                    state = 2;
+                                }
+                                else {
+                                    state0state = 0;
+                                    username = "";
+                                    password = "";
+                                }
+                               
                             }
 
                         }
