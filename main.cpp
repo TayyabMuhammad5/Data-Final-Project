@@ -131,6 +131,7 @@ public:
 };
 int main()
 {
+    int n = 2;
     srand(time(0));
 
     RenderWindow window(VideoMode(N*ts, M*ts), "Xonix Game!");
@@ -151,12 +152,13 @@ int main()
     bool Game=true;
     int x=0, y=0, dx=0, dy=0;
     float timer=0, delay=0.07; 
-    Texture log, sign;
+    Texture log, sign,playersNo;
     log.loadFromFile("images/Login.png");
     sign.loadFromFile("images/Sign In.png");
-    Sprite logSp(log), signSp(sign);
+    playersNo.loadFromFile("images/No of Players.png");
+    Sprite logSp(log), signSp(sign),playerSp(playersNo);
     Clock clock;
-    int state = 0;
+    int state = -1,noOfPlayers;
     sf::Font font;
     Authentiacation auth;
     string username = "", password = "";
@@ -201,8 +203,20 @@ int main()
                 int tileX = x / ts;
                 int tileY = y / ts;
                 cout << tileX << " " << tileY << endl;
-                if (tileX >= 21 && tileX < 25 && tileY >= 27 && tileY < 29) {
-                    state = 1;
+                if (state == 0) {
+                    if (tileX >= 21 && tileX < 25 && tileY >= 27 && tileY < 29) {
+                        state = 1;
+                    }
+                }
+                else if (state == -1) {
+                    if (tileX >= 5 && tileX < 25 && tileY >= 11 && tileY < 15) {
+                        state = 0;
+                        noOfPlayers = 1;
+                    }
+                    else if (tileX >= 5 && tileX < 25 && tileY >= 16 && tileY < 20) {
+                        state = 0;
+                        noOfPlayers = 2;
+                    }
                 }
             }
             if (state == 0 && event.type == sf::Event::TextEntered) {
@@ -328,6 +342,9 @@ int main()
 
         /////////draw//////////
         window.clear();
+        if (state == -1) {
+            window.draw(playerSp);
+        }
         if (state == 0) {
             window.draw(logSp);
 
