@@ -127,7 +127,7 @@ void Menu::run() {
 }
 void Menu::render(RenderWindow& window) {
 
-    if (isAuthenticationOn && isSecondAuthenticationOn) {
+    if (isAuthenticationOn ) {
         auth.render(window);
         return;
     }
