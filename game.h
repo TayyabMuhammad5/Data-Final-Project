@@ -81,10 +81,10 @@ public:
         username2 = "";
         password2 = "";
         subState = 0;
-        if (!log.loadFromFile("images/Login.jpg")) {
+        if (!log.loadFromFile("images/Login.png")) {
             cout << "faltu" << endl;
         }
-        sign.loadFromFile("images/Sign-In.jpg");
+        sign.loadFromFile("images/Sign In.png");
         logSp.setTexture(log);
         signSp.setTexture(sign);
         font.loadFromFile("images/Arial.ttf");
