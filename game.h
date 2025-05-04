@@ -73,6 +73,7 @@ private:
     bool userFound = true;
     bool isPassCorrect = true;
     bool isAlreadyPresent = false;
+
 public:
     Authentication(RenderWindow& window) :window(window) {
         enteredChar = '\0';

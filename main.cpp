@@ -127,7 +127,7 @@ void Menu::run() {
 }
 void Menu::render(RenderWindow& window) {
 
-    if (isAuthenticationOn) {
+    if (isAuthenticationOn && isSecondAuthenticationOn) {
         auth.render(window);
         return;
     }
@@ -243,6 +243,7 @@ void Authentication::handleEvents(Event& event) {
                         password = "";
                     }
                     else {
+                        
                         state = 3;
                     }
 
