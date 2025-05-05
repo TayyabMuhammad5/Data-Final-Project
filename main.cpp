@@ -164,11 +164,16 @@ bool Authentication::signUp(string user, string pass) {
     
     if (pass.length() < 8) {
         isPassCorrect = false;
+        return false;
     }
     ifstream inFile("username.txt");
     string line;
     while (getline(inFile, line)) {
         if (user == line) {
+            isAlreadyPresent = true;
+            return false;
+        }
+        if (pass == line) {
             isAlreadyPresent = true;
             return false;
         }
@@ -370,7 +375,7 @@ void Authentication::render(RenderWindow& win) {
         text.setPosition(5 * ts, 5 * ts);
         text.setFillColor(sf::Color::Red);
         text.setCharacterSize(27);
-        text.setString("This username already exists");
+        text.setString("This username or password already exists");
         window.draw(text);
         window.display();
         sf::sleep(sf::seconds(2));
