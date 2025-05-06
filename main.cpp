@@ -438,17 +438,22 @@ void Authentication::handleEvents(Event& event) {
                         password = "";
                     }
                     else {
-                        numTimes -= 1;
-                        if (numTimes != 0) {
+                       // numTimes -= 1;
+                        if (numTimes == 1 && !isDouble) {
+                            state = 3;
+                        }
+                        else if (numTimes == 2) {
+                            isDouble = true;
                             subState = 0;
                             state0state = 0;
                             username = "";
                             password = "";
+                            numTimes -= 1;
                         }
                         else {
                             state = 4;
                         }
-                       
+
                     }
 
                 }
@@ -488,7 +493,7 @@ void Authentication::handleEvents(Event& event) {
                         password2 = "";
                     }
                     else {
-                       // numTimes -= 1;
+                        // numTimes -= 1;
                         if (numTimes == 1 && !isDouble) {
                             state = 3;
                         }
@@ -535,7 +540,7 @@ void Authentication::render(RenderWindow& win) {
             text.setString("Player 2");
         }
         window.draw(text);
-        
+
         nameT.setPosition(10 * ts, 13 * ts);
         nameT.setString(username);
         nameT.setCharacterSize(37);
@@ -726,7 +731,7 @@ void MultiPlayerMode::handleEvents(Event& event) {
 }
 
 void MultiPlayerMode::run() {
-    
+
     // 0 = empty space, 1 = boundary (blue) , 2 = player 1 captured tiles, 3 = player 1 trail (red) , 4 = player 2 captured tiles (green) , 5 = player 2 trail (golden)
 
     if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
@@ -755,7 +760,7 @@ void MultiPlayerMode::run() {
         }
         cout << endl;
     }
-   
+
     if (timer > delay)
     {
 
@@ -777,7 +782,7 @@ void MultiPlayerMode::run() {
         timer = 0;
 
     }
-    
+
     for (int i = 0;i < enemyCount;i++) a[i].move();
 
     //// Player 1
@@ -787,7 +792,7 @@ void MultiPlayerMode::run() {
 
         for (int i = 0;i < enemyCount;i++)
             drop(a[i].y / ts, a[i].x / ts);
-      
+
         for (int i = 0;i < M;i++) {
             for (int j = 0;j < N;j++) {
                 if (grid[i][j] == 0) {
@@ -799,10 +804,9 @@ void MultiPlayerMode::run() {
                 else if (grid[i][j] == -1) {
                     grid[i][j] = 0;
                 }
-                else if (grid[i][j] == 0 || grid[i][j] == 2) {
-                    grid[i][j] = 4;      // Captured Tiles of Player 1
-                }
-                  
+            }
+        }
+
     }
     //// Player 2
     if (grid[y2][x2] == 1 || grid[y2][x2] == 4 || grid[y2][x2] == 2) {
@@ -813,7 +817,7 @@ void MultiPlayerMode::run() {
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 if (grid[i][j] == 0) {
-                   // cout << "Player 2 claiming (" << i << "," << j << ") which was: " << grid[i][j] << endl;
+                    // cout << "Player 2 claiming (" << i << "," << j << ") which was: " << grid[i][j] << endl;
                     grid[i][j] = 2;
                 }
                 else if (grid[i][j] == 5) {
@@ -831,7 +835,7 @@ void MultiPlayerMode::run() {
 }
 void MultiPlayerMode::render(RenderWindow& window) {
     window.clear();
-    
+
     // 0 = empty space, 1 = boundary (blue) , 2 = player 1 captured tiles, 3 = player 1 trail (red) , 4 = player 2 captured tiles (green) , 5 = player 2 trail (golden)
     for (int i = 0;i < M;i++)
         for (int j = 0;j < N;j++)
@@ -864,11 +868,11 @@ void MultiPlayerMode::render(RenderWindow& window) {
                 sPlayer2.setPosition(j * ts, i * ts);
                 window.draw(sPlayer2);
             }
-           
+
         }
 
     sPlayer1.setTextureRect(IntRect(150, 0, ts, ts));
-    sPlayer1.setPosition(x * ts, y * ts); 
+    sPlayer1.setPosition(x * ts, y * ts);
     window.draw(sPlayer1);
 
     sPlayer2.setTextureRect(IntRect(180, 0, ts, ts));

@@ -102,7 +102,7 @@ private:
     bool userFound = true;
     bool isPassCorrect = true;
     bool isAlreadyPresent = false;
-
+    bool isDouble = false;
 public:
     Authentication(RenderWindow& window, PlayerProfile* player) :window(window), profile(player) {
         numTimes = 0;
