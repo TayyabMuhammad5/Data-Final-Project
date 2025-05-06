@@ -6,9 +6,9 @@ using namespace sf;
 
 
 // PLayer Profile
-void PlayerProfile::ReadPlayers() {    
-    
-std::ifstream inputFile("username.txt", std::ios::binary | std::ios::ate);
+void PlayerProfile::ReadPlayers() {
+
+    std::ifstream inputFile("username.txt", std::ios::binary | std::ios::ate);
 
     if (!inputFile || inputFile.tellg() == 0) {
         std::cout << "File doesn't exist or is empty.\n";
@@ -20,9 +20,9 @@ std::ifstream inputFile("username.txt", std::ios::binary | std::ios::ate);
     inputFile.seekg(0);
     string line;
     int i = 0;
-    
-    
-    
+
+
+
     while (getline(inputFile, line)) {
         if (!line.empty() && line.back() == '\r')
             line.pop_back();
@@ -56,7 +56,7 @@ std::ifstream inputFile("username.txt", std::ios::binary | std::ios::ate);
             players[numPlayers - 1].HighestScore = stoi(line);
         }
         else if (i == 6 && line != "null") {
-            
+
             char* arr = new char[100];
             int count = 0;
             players[numPlayers - 1].numfriends = 1;
@@ -66,7 +66,7 @@ std::ifstream inputFile("username.txt", std::ios::binary | std::ios::ate);
                 }
             }
 
-            players[numPlayers- 1].friendNames = new string[players[numPlayers - 1].numfriends];
+            players[numPlayers - 1].friendNames = new string[players[numPlayers - 1].numfriends];
             int k = 0;
             for (int i = 0; i < line.length(); i++) {
                 if (line[i] == ',') {
@@ -138,9 +138,9 @@ void PlayerProfile::WritePlayers() {
 }
 
 void PlayerProfile::display() {
-   
+
     for (int i = 0;i < numPlayers; i++) {
-       
+
         cout << "Name: " << players[i].name << endl;
         cout << "Password: " << players[i].password << endl;
         cout << "Score: " << players[i].score << endl;
@@ -205,7 +205,7 @@ void StateManager::ChangeState(int state) {
         state_class = new Title;
     }
     else if (state == 2) {
-        state_class = new Menu(window,profile);
+        state_class = new Menu(window, profile);
     }
     else if (state == 3) {
         state_class = new SingularMode(profile);
@@ -213,7 +213,7 @@ void StateManager::ChangeState(int state) {
     else if (state == 4) {
         state_class = new MultiPlayerMode(profile);
     }
-    
+
 }
 void StateManager::handleEvent(Event& e) {
     state_class->handleEvents(e);
@@ -246,7 +246,7 @@ void Title::run() {
 void Title::render(RenderWindow& window) {
     window.clear();
     window.draw(backGroundSprite);
-   // window.display();
+    // window.display();
 }
 
 // Menu
@@ -264,14 +264,14 @@ void Menu::handleEvents(Event& event) {
             for (int i = 0; i < numOptions; i++) {
                 if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouse_x), static_cast<float>(mouse_y))) {
                     if (i == 0) {
-                       // isAuthenticationOn = true;
+                        // isAuthenticationOn = true;
                         auth.getNumTimes() = 1;
-                       // auth = new Authentication(window);
+                        // auth = new Authentication(window);
                         return;
                     }
                     else if (i == 1) {
-                       // isAuthenticationOn = true;
-                       // isSecondAuthenticationOn = true;
+                        // isAuthenticationOn = true;
+                        // isSecondAuthenticationOn = true;
                         auth.getNumTimes() = 2;
                     }
                 }
@@ -280,12 +280,12 @@ void Menu::handleEvents(Event& event) {
     }
 }
 void Menu::run() {
-   
+
     if (auth.getNumTimes() != 0) {
         auth.run();
         return;
     }
-    
+
 
     menuName.setCharacterSize(50);
     menuName.setFont(font);
@@ -294,8 +294,8 @@ void Menu::run() {
     menuName.setPosition(550, 200);
 
     for (int i = 0; i < numOptions; i++) {
-       
-        buttons[i].setSize(Vector2f(350.0f,50.0f));
+
+        buttons[i].setSize(Vector2f(350.0f, 50.0f));
         buttons[i].setPosition(450, 300 + i * 56);
         buttons[i].setFillColor(Color::Transparent);
         buttons[i].setOutlineThickness(2);
@@ -311,14 +311,14 @@ void Menu::run() {
 }
 void Menu::render(RenderWindow& window) {
 
-    if (isAuthenticationOn) {
+    if (auth.getNumTimes() != 0) {
         auth.render(window);
         return;
     }
     // BackGround 
     window.draw(backGroundSprite);
     window.draw(menuName);
-    
+
     for (int i = 0; i < numOptions; i++) {
         int mouseX = Mouse::getPosition(window).x;
         int mouseY = Mouse::getPosition(window).y;
@@ -338,15 +338,14 @@ void Menu::render(RenderWindow& window) {
         window.draw(buttons[i]);
         window.draw(text[i]);
     }
-   
-   // window.display();
+
+    // window.display();
 }
 // Authentication
 bool Authentication::signUp(string user, string pass) {
-   
+
     if (pass.length() < 8) {
         isPassCorrect = false;
-        return false;
     }
     ifstream inFile("username.txt");
     string line;
@@ -355,24 +354,20 @@ bool Authentication::signUp(string user, string pass) {
             isAlreadyPresent = true;
             return false;
         }
-        if (pass == line) {
-            isAlreadyPresent = true;
-            return false;
-        }
     }
     if (profile->CheckUsername(user) != -1) {
         isAlreadyPresent = true;
-      
+
         return false;
     }
     else {
         profile->Addplayer(user, pass);
-         if (profile->getPlayer1() != -1) {
-           profile->getPlayer1() = profile->CheckUsername(user);
-         }
-       else {
-           profile->getPlayer2() = profile->CheckUsername(user);
-       }
+        if (profile->getPlayer1() != -1) {
+            profile->getPlayer1() = profile->CheckUsername(user);
+        }
+        else {
+            profile->getPlayer2() = profile->CheckUsername(user);
+        }
     }
     profile->display();
     profile->WritePlayers();
@@ -398,7 +393,7 @@ bool Authentication::logIn(string user, string pass) {
     return false;
 }
 void Authentication::run() {
-   
+
 }
 void Authentication::handleEvents(Event& event) {
     if (event.type == Event::MouseButtonPressed &&
@@ -409,7 +404,7 @@ void Authentication::handleEvents(Event& event) {
         int tileX = x / ts;
         int tileY = y / ts;
         cout << tileX << " " << tileY << endl;
-        
+
         if (tileX >= 27 && tileX <= 33 && tileY >= 23 && tileY <= 25) {
             subState = 1;
             username = "";
@@ -418,7 +413,7 @@ void Authentication::handleEvents(Event& event) {
         }
         cout << subState << endl;
     }
- 
+
     if (subState == 0 && event.type == sf::Event::TextEntered) {
         if (event.text.unicode < 128) {
             if (event.text.unicode == 8) {
@@ -443,7 +438,17 @@ void Authentication::handleEvents(Event& event) {
                         password = "";
                     }
                     else {
-                        state = 3;
+                        numTimes -= 1;
+                        if (numTimes != 0) {
+                            subState = 0;
+                            state0state = 0;
+                            username = "";
+                            password = "";
+                        }
+                        else {
+                            state = 4;
+                        }
+
                     }
 
                 }
@@ -512,7 +517,7 @@ void Authentication::handleEvents(Event& event) {
     }
 }
 void Authentication::render(RenderWindow& win) {
-  
+
     if (subState == 0) {
         window.draw(logSp);
 
@@ -576,7 +581,7 @@ void Authentication::render(RenderWindow& win) {
         text.setPosition(5 * ts, 5 * ts);
         text.setFillColor(sf::Color::Red);
         text.setCharacterSize(27);
-        text.setString("This username or password already exists");
+        text.setString("This username already exists");
         window.draw(text);
         window.display();
         sf::sleep(sf::seconds(2));
@@ -604,9 +609,9 @@ void SingularMode::handleEvents(Event& event) {
             x = 10;y = 0;
             Game = true;
         }
-        
+
     }
-    
+
 }
 
 void SingularMode::run() {
@@ -695,7 +700,7 @@ void MultiPlayerMode::handleEvents(Event& event) {
 }
 
 void MultiPlayerMode::run() {
-    
+
     if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
     if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;dy = 0; };
     if (Keyboard::isKeyPressed(Keyboard::Up)) { dx = 0;dy = -1; };
@@ -724,14 +729,14 @@ void MultiPlayerMode::run() {
     }
     if (timer > delay)
     {
-        
+
         x += dx;
         y += dy;
 
         x2 += dx2;
         y2 += dy2;
 
-        
+
 
         if (grid[y][x] == 2) Game = false; // hit own trail
         if (grid[y][x] == 0) grid[y][x] = 2; // trail creation for player 1
@@ -745,7 +750,7 @@ void MultiPlayerMode::run() {
     {
         dx = dy = 0;
 
-        for (int i = 0;i < enemyCount;i++)                                              
+        for (int i = 0;i < enemyCount;i++)
             drop(a[i].y / ts, a[i].x / ts);
 
         for (int i = 0;i < M;i++)
@@ -756,14 +761,14 @@ void MultiPlayerMode::run() {
                 else if (grid[i][j] == 0 || grid[i][j] == 2) {
                     grid[i][j] = 4;      // Captured Tiles of Player 1
                 }
-                  
+
     }
     if (grid[y2][x2] == 1) {
         dx2 = dy2 = 0;
         for (int i = 0;i < enemyCount;i++)
             drop(a[i].y / ts, a[i].x / ts);
 
-     
+
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
@@ -809,12 +814,12 @@ void MultiPlayerMode::render(RenderWindow& window) {
                 sPlayer2.setPosition(j * ts, i * ts);
                 window.draw(sPlayer2);
             }
-           
-           
+
+
         }
 
     sPlayer1.setTextureRect(IntRect(120, 0, ts, ts));
-    sPlayer1.setPosition(x * ts, y * ts); 
+    sPlayer1.setPosition(x * ts, y * ts);
     window.draw(sPlayer1);
 
     sPlayer2.setTextureRect(IntRect(150, 0, ts, ts));
@@ -840,7 +845,7 @@ void Game::start() {
             if (event.type == Event::Closed || (event.type == Event::KeyPressed && event.key.code == Keyboard::Escape)) {
                 window.close();
             }
-            state_manager.handleEvent(event);       
+            state_manager.handleEvent(event);
         }
         if (state_manager.isStateChanged()) {
             state_manager.ChangeState(state);
@@ -848,9 +853,9 @@ void Game::start() {
         state_manager.run();
         state_manager.render(window);
         window.display();
-    
+
         window.clear();
-        
+
     }
 
 }
@@ -864,9 +869,9 @@ int main()
     PlayerProfile* players = new PlayerProfile;
     players->ReadPlayers();
     players->display();
-    Game game(window,players);
+    Game game(window, players);
     game.start();
-   
+
 
     return 0;
 }
