@@ -775,6 +775,7 @@ void MultiPlayerMode::run() {
                 if (grid[i][j] == -1) {
                     grid[i][j] = 0;
                 }
+
                 else if (grid[i][j] == 0 || grid[i][j] == 3) {
                     grid[i][j] = 1;
                 }
