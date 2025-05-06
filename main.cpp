@@ -236,7 +236,7 @@ void Title::handleEvents(Event& event) {
     if (event.type == Event::KeyPressed) {
         if (event.key.code == Keyboard::Enter) {
             cout << state << endl;
-            state = 4;
+            state = 2;
         }
     }
 }
@@ -448,7 +448,7 @@ void Authentication::handleEvents(Event& event) {
                         else {
                             state = 4;
                         }
-
+                       
                     }
 
                 }
@@ -488,15 +488,20 @@ void Authentication::handleEvents(Event& event) {
                         password2 = "";
                     }
                     else {
-                        numTimes -= 1;
-                        if (numTimes != 0) {
+                       // numTimes -= 1;
+                        if (numTimes == 1 && !isDouble) {
+                            state = 3;
+                        }
+                        else if (numTimes == 2) {
+                            isDouble = true;
                             subState = 0;
                             state0state = 0;
                             username2 = "";
                             password2 = "";
+                            numTimes -= 1;
                         }
                         else {
-                            state = 3;
+                            state = 4;
                         }
                     }
                 }
@@ -520,7 +525,17 @@ void Authentication::render(RenderWindow& win) {
 
     if (subState == 0) {
         window.draw(logSp);
-
+        text.setCharacterSize(65);
+        text.setFont(font);
+        text.setPosition(6 * ts, 6.5 * ts);
+        if (!isDouble) {
+            text.setString("Player 1");
+        }
+        else {
+            text.setString("Player 2");
+        }
+        window.draw(text);
+        
         nameT.setPosition(10 * ts, 13 * ts);
         nameT.setString(username);
         nameT.setCharacterSize(37);
@@ -536,6 +551,16 @@ void Authentication::render(RenderWindow& win) {
     }
     else if (subState == 1) {
         window.draw(signSp);
+        text.setCharacterSize(65);
+        text.setFont(font);
+        text.setPosition(5 * ts, 6.5 * ts);
+        if (!isDouble) {
+            text.setString("Player 1");
+        }
+        else {
+            text.setString("Player 2");
+        }
+        window.draw(text);
         nameT.setPosition(10 * ts, 13 * ts);
         nameT.setString(username2);
         nameT.setCharacterSize(37);
@@ -598,6 +623,7 @@ void drop(int y, int x)
     if (grid[y][x - 1] == 0) drop(y, x - 1);
     if (grid[y][x + 1] == 0) drop(y, x + 1);
 }
+
 // Singular Mode
 void SingularMode::handleEvents(Event& event) {
     if (event.type == Event::KeyPressed) {
@@ -676,7 +702,7 @@ void SingularMode::render(RenderWindow& window) {
     sTile.setPosition(x * ts, y * ts);
     window.draw(sTile);
 
-    sEnemy.rotate(10);
+    sEnemy.rotate(20);
     for (int i = 0;i < enemyCount;i++)
     {
         sEnemy.setPosition(a[i].x, a[i].y);
@@ -700,6 +726,8 @@ void MultiPlayerMode::handleEvents(Event& event) {
 }
 
 void MultiPlayerMode::run() {
+    
+    // 0 = empty space, 1 = boundary (blue) , 2 = player 1 captured tiles, 3 = player 1 trail (red) , 4 = player 2 captured tiles (green) , 5 = player 2 trail (golden)
 
     if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
     if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;dy = 0; };
@@ -716,7 +744,7 @@ void MultiPlayerMode::run() {
     timer += time;
 
     if (!Game) {
-        state = 5;
+        return;
     }
     if (Keyboard::isKeyPressed(Keyboard::Enter)) {
         for (int i = 0; i < M; i++) {
@@ -727,6 +755,7 @@ void MultiPlayerMode::run() {
         }
         cout << endl;
     }
+   
     if (timer > delay)
     {
 
@@ -736,59 +765,74 @@ void MultiPlayerMode::run() {
         x2 += dx2;
         y2 += dy2;
 
+        if (x < 0) x = 0; if (x > N - 1) x = N - 1;
+        if (y < 0) y = 0; if (y > M - 1) y = M - 1;
+        if (x2 < 0) x2 = 0; if (x2 > N - 1) x2 = N - 1;
+        if (y2 < 0) y2 = 0; if (y2 > M - 1) y2 = M - 1;
 
-
-        if (grid[y][x] == 2) Game = false; // hit own trail
-        if (grid[y][x] == 0) grid[y][x] = 2; // trail creation for player 1
-        if (grid[y2][x2] == 0) grid[y2][x2] = 3; // trail creation for player 2
+        if (grid[y][x] == 3) Game = false; // hit own trail
+        if (grid[y2][x2] == 5) Game = false;
+        if (grid[y][x] == 0) grid[y][x] = 3; // trail creation for player 1
+        if (grid[y2][x2] == 0) grid[y2][x2] = 5; // trail creation for player 2
         timer = 0;
-    }
 
+    }
+    
     for (int i = 0;i < enemyCount;i++) a[i].move();
 
-    if (grid[y][x] == 1)
+    //// Player 1
+    if (grid[y][x] == 1 || grid[y][x] == 2 || grid[y][x] == 4)
     {
         dx = dy = 0;
 
         for (int i = 0;i < enemyCount;i++)
             drop(a[i].y / ts, a[i].x / ts);
-
-        for (int i = 0;i < M;i++)
-            for (int j = 0;j < N;j++)
-                if (grid[i][j] == -1) {
+      
+        for (int i = 0;i < M;i++) {
+            for (int j = 0;j < N;j++) {
+                if (grid[i][j] == 0) {
+                    grid[i][j] = 4;
+                }
+                else if (grid[i][j] == 3) {
+                    grid[i][j] = 2;
+                }
+                else if (grid[i][j] == -1) {
                     grid[i][j] = 0;
                 }
                 else if (grid[i][j] == 0 || grid[i][j] == 2) {
                     grid[i][j] = 4;      // Captured Tiles of Player 1
                 }
-
+                  
     }
-    if (grid[y2][x2] == 1) {
+    //// Player 2
+    if (grid[y2][x2] == 1 || grid[y2][x2] == 4 || grid[y2][x2] == 2) {
         dx2 = dy2 = 0;
         for (int i = 0;i < enemyCount;i++)
             drop(a[i].y / ts, a[i].x / ts);
 
-
-
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                if (grid[i][j] == -1) {
-                    grid[i][j] = 0;
+                if (grid[i][j] == 0) {
+                   // cout << "Player 2 claiming (" << i << "," << j << ") which was: " << grid[i][j] << endl;
+                    grid[i][j] = 2;
                 }
-
-                else if (grid[i][j] == 0 || grid[i][j] == 3) {
-                    grid[i][j] = 1;
+                else if (grid[i][j] == 5) {
+                    grid[i][j] = 4;
+                }
+                else if (grid[i][j] == -1) {
+                    grid[i][j] = 0;
                 }
             }
         }
     }
 
     for (int i = 0;i < enemyCount;i++)
-        if (grid[a[i].y / ts][a[i].x / ts] == 2 || grid[a[i].y / ts][a[i].x / ts] == 3) Game = false;
+        if (grid[a[i].y / ts][a[i].x / ts] == 3 || grid[a[i].y / ts][a[i].x / ts] == 5) Game = false;
 }
 void MultiPlayerMode::render(RenderWindow& window) {
     window.clear();
-    // 0 = empty space, 1 = Captured Tiles of Player 1, 2 = trail of Player 1, 3 = trail of player 2, 4 = captured tiles of player 2
+    
+    // 0 = empty space, 1 = boundary (blue) , 2 = player 1 captured tiles, 3 = player 1 trail (red) , 4 = player 2 captured tiles (green) , 5 = player 2 trail (golden)
     for (int i = 0;i < M;i++)
         for (int j = 0;j < N;j++)
         {
@@ -801,7 +845,7 @@ void MultiPlayerMode::render(RenderWindow& window) {
                 window.draw(sPlayer1);
             }
             if (grid[i][j] == 2) {
-                sPlayer1.setTextureRect(IntRect(30, 0, ts, ts));
+                sPlayer1.setTextureRect(IntRect(60, 0, ts, ts));
                 sPlayer1.setPosition(j * ts, i * ts);
                 window.draw(sPlayer1);
             }
@@ -811,23 +855,27 @@ void MultiPlayerMode::render(RenderWindow& window) {
                 window.draw(sPlayer2);
             }
             if (grid[i][j] == 4) {
-                sPlayer2.setTextureRect(IntRect(90, 0, ts, ts));
+                sPlayer2.setTextureRect(IntRect(120, 0, ts, ts));
                 sPlayer2.setPosition(j * ts, i * ts);
                 window.draw(sPlayer2);
             }
-
-
+            if (grid[i][j] == 5) {
+                sPlayer2.setTextureRect(IntRect(120, 0, ts, ts));
+                sPlayer2.setPosition(j * ts, i * ts);
+                window.draw(sPlayer2);
+            }
+           
         }
 
-    sPlayer1.setTextureRect(IntRect(120, 0, ts, ts));
-    sPlayer1.setPosition(x * ts, y * ts);
+    sPlayer1.setTextureRect(IntRect(150, 0, ts, ts));
+    sPlayer1.setPosition(x * ts, y * ts); 
     window.draw(sPlayer1);
 
-    sPlayer2.setTextureRect(IntRect(150, 0, ts, ts));
+    sPlayer2.setTextureRect(IntRect(180, 0, ts, ts));
     sPlayer2.setPosition(x2 * ts, y2 * ts);
     window.draw(sPlayer2);
 
-    sEnemy.rotate(10);
+    sEnemy.rotate(20);
     for (int i = 0;i < enemyCount;i++)
     {
         sEnemy.setPosition(a[i].x, a[i].y);
