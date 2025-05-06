@@ -6,14 +6,191 @@ using namespace sf;
 
 
 // PLayer Profile
-void PlayerProfile::ReadPlayers() {
-    ifstream inputFile("username.txt");
-    string line;
-    while (getline(inputFile, line)) {
+void PlayerProfile::ReadPlayers() {    
+    
+std::ifstream inputFile("username.txt", std::ios::binary | std::ios::ate);
 
+    if (!inputFile || inputFile.tellg() == 0) {
+        std::cout << "File doesn't exist or is empty.\n";
+        players = nullptr;
+        numPlayers = 0;
+        return;
+    }
+
+    inputFile.seekg(0);
+    string line;
+    int i = 0;
+    
+    
+    
+    while (getline(inputFile, line)) {
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
+
+        if (line == "---") {
+            numPlayers += 1;
+            Player* tmp = new Player[numPlayers];
+            for (int j = 0; j < numPlayers - 1; j++) {
+                tmp[j] = players[j];
+            }
+            players = tmp;
+            i = 0;
+            continue;
+        }
+        if (i == 0) {
+            players[numPlayers - 1].name = line;
+        }
+        else if (i == 1) {
+            players[numPlayers - 1].password = line;
+        }
+        else if (i == 2) {
+            players[numPlayers - 1].score = stoi(line);
+        }
+        else if (i == 3) {
+            players[numPlayers - 1].TotalScore = stoi(line);
+        }
+        else if (i == 4) {
+            players[numPlayers - 1].noOfMatches = stoi(line);
+        }
+        else if (i == 5) {
+            players[numPlayers - 1].HighestScore = stoi(line);
+        }
+        else if (i == 6 && line != "null") {
+            
+            char* arr = new char[100];
+            int count = 0;
+            players[numPlayers - 1].numfriends = 1;
+            for (int i = 0; i < line.length(); i++) {
+                if (line[i] == ',') {
+                    players[numPlayers - 1].numfriends += 1;
+                }
+            }
+
+            players[numPlayers- 1].friendNames = new string[players[numPlayers - 1].numfriends];
+            int k = 0;
+            for (int i = 0; i < line.length(); i++) {
+                if (line[i] == ',') {
+                    arr[count] = '\0';
+                    players[numPlayers - 1].friendNames[k] = arr;
+                    k++;
+                    arr = new char[100];
+                    count = 0;
+                    continue;
+                }
+                arr[count] = line[i];
+                count++;
+            }
+            arr[count] = '\0';
+            players[numPlayers - 1].friendNames[k] = arr;
+        }
+        else if (i == 7 && line != "null") {
+
+            players[numPlayers - 1].matchHistory = new int[players[numPlayers - 1].noOfMatches];
+            int j = 0;
+            for (int k = 0; k < line.length(); k++) {
+                if (line[k] == ',') {
+                    continue;
+                }
+                players[numPlayers - 1].matchHistory[j++] = line[k] - '0';
+            }
+        }
+        i++;
     }
 }
+void PlayerProfile::WritePlayers() {
+    ofstream outFile("username.txt");
 
+    for (int i = 0; i < numPlayers; ++i) {
+        outFile << "---" << '\n';
+        outFile << players[i].name << '\n';
+        outFile << players[i].password << '\n';
+        outFile << players[i].score << '\n';
+        outFile << players[i].TotalScore << '\n';
+        outFile << players[i].noOfMatches << '\n';
+        outFile << players[i].HighestScore << '\n';
+        if (players[i].friendNames != nullptr && players[i].numfriends > 0) {
+            for (int j = 0; j < players[i].numfriends; ++j) {
+                outFile << players[i].friendNames[j];
+                if (j != players[i].numfriends - 1)
+                    outFile << ',';
+            }
+        }
+        else {
+            outFile << "null";
+        }
+        outFile << '\n';
+
+        if (players[i].matchHistory != nullptr && players[i].noOfMatches > 0) {
+            for (int j = 0; j < players[i].noOfMatches; ++j) {
+                outFile << players[i].matchHistory[j];
+                if (j != players[i].noOfMatches - 1)
+                    outFile << ',';
+            }
+        }
+        else {
+            outFile << "null";
+        }
+        outFile << '\n';
+
+    }
+
+    outFile.close();
+}
+
+void PlayerProfile::display() {
+   
+    for (int i = 0;i < numPlayers; i++) {
+       
+        cout << "Name: " << players[i].name << endl;
+        cout << "Password: " << players[i].password << endl;
+        cout << "Score: " << players[i].score << endl;
+        cout << "Total Score: " << players[i].TotalScore << endl;
+        cout << "Highest Score: " << players[i].HighestScore << endl;
+        cout << "Number of Matches: " << players[i].noOfMatches << endl;
+        cout << "Friends: ";
+        for (int j = 0; j < players[i].numfriends; j++) {
+            cout << players[i].friendNames[j] << ", ";
+        }
+        cout << endl;
+        cout << "Match History: ";
+        for (int j = 0; j < players[i].noOfMatches; j++) {
+            cout << players[i].matchHistory[j] << ", ";
+        }
+        cout << endl;
+    }
+}
+int PlayerProfile::CheckUsername(string username) {
+    for (int i = 0; i < numPlayers; i++) {
+        if (players[i].name == username) {
+            return i;
+        }
+    }
+    return -1;
+}
+int PlayerProfile::CheckPassword(string username) {
+    for (int i = 0; i < numPlayers; i++) {
+        if (players[i].password == username) {
+            return i;
+        }
+    }
+    return -1;
+}
+void PlayerProfile::Addplayer(string username, string pass) {
+    Player* tmp = new Player[numPlayers + 1];
+    for (int i = 0; i < numPlayers; i++) {
+        tmp[i] = players[i];
+    }
+    tmp[numPlayers].name = username;
+    tmp[numPlayers].password = pass;
+    tmp[numPlayers].HighestScore = 0;
+    tmp[numPlayers].score = 0;
+    tmp[numPlayers].TotalScore = 0;
+    tmp[numPlayers].friendNames = nullptr;
+    tmp[numPlayers].noOfMatches = 0;
+    tmp[numPlayers].matchHistory = nullptr;
+    players = tmp;
+    numPlayers += 1;
+}
 // State Manager:
 bool StateManager::isStateChanged() {
     if (substate != state) {
@@ -28,7 +205,13 @@ void StateManager::ChangeState(int state) {
         state_class = new Title;
     }
     else if (state == 2) {
-        state_class = new Menu(window);
+        state_class = new Menu(window,profile);
+    }
+    else if (state == 3) {
+        state_class = new SingularMode(profile);
+    }
+    else if (state == 4) {
+        state_class = new MultiPlayerMode(profile);
     }
     
 }
@@ -53,7 +236,7 @@ void Title::handleEvents(Event& event) {
     if (event.type == Event::KeyPressed) {
         if (event.key.code == Keyboard::Enter) {
             cout << state << endl;
-            state = 2;
+            state = 4;
         }
     }
 }
@@ -70,7 +253,7 @@ void Title::render(RenderWindow& window) {
 
 
 void Menu::handleEvents(Event& event) {
-    if (isAuthenticationOn) {
+    if (auth.getNumTimes() != 0) {
         auth.handleEvents(event);
         return;
     }
@@ -81,14 +264,15 @@ void Menu::handleEvents(Event& event) {
             for (int i = 0; i < numOptions; i++) {
                 if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouse_x), static_cast<float>(mouse_y))) {
                     if (i == 0) {
-                        cout << "yes its me" << endl;
-                        isAuthenticationOn = true;
+                       // isAuthenticationOn = true;
+                        auth.getNumTimes() = 1;
                        // auth = new Authentication(window);
                         return;
                     }
                     else if (i == 1) {
-                        isAuthenticationOn = true;
-                        isSecondAuthenticationOn = true;
+                       // isAuthenticationOn = true;
+                       // isSecondAuthenticationOn = true;
+                        auth.getNumTimes() = 2;
                     }
                 }
             }
@@ -97,11 +281,11 @@ void Menu::handleEvents(Event& event) {
 }
 void Menu::run() {
    
-    if (isAuthenticationOn) {
+    if (auth.getNumTimes() != 0) {
         auth.run();
         return;
     }
-   
+    
 
     menuName.setCharacterSize(50);
     menuName.setFont(font);
@@ -127,7 +311,7 @@ void Menu::run() {
 }
 void Menu::render(RenderWindow& window) {
 
-    if (isAuthenticationOn) {
+    if (auth.getNumTimes() != 0) {
         auth.render(window);
         return;
     }
@@ -159,9 +343,7 @@ void Menu::render(RenderWindow& window) {
 }
 // Authentication
 bool Authentication::signUp(string user, string pass) {
-    
    
-    
     if (pass.length() < 8) {
         isPassCorrect = false;
     }
@@ -173,30 +355,40 @@ bool Authentication::signUp(string user, string pass) {
             return false;
         }
     }
-    ofstream outFile("username.txt", ios::app);
+    if (profile->CheckUsername(user) != -1) {
+        isAlreadyPresent = true;
+      
+        return false;
+    }
+    else {
+        profile->Addplayer(user, pass);
+         if (profile->getPlayer1() != -1) {
+           profile->getPlayer1() = profile->CheckUsername(user);
+         }
+       else {
+           profile->getPlayer2() = profile->CheckUsername(user);
+       }
+    }
+    profile->display();
+    profile->WritePlayers();
+    /*ofstream outFile("username.txt", ios::app);
     outFile << user << endl;
     outFile << pass << endl;
-    outFile.close();
+    outFile.close();*/
 }
 bool Authentication::logIn(string user, string pass) {
-  
-    ifstream inFile("username.txt");
     string line;
-   
-    while (getline(inFile, line)) {
-        if (line == user) {
-            string passw;
-            getline(inFile, passw);
-            if (pass == passw)
-            {
-
-                cout << "Account is found" << endl;
-                userFound = true;
-                return userFound;
-            }
+    if (profile->CheckUsername(user) != -1 && profile->CheckPassword(pass) != -1) {
+        if (profile->getPlayer1() != -1) {
+            profile->getPlayer1() = profile->CheckUsername(user);
         }
+        else {
+            profile->getPlayer2() = profile->CheckUsername(user);
+        }
+        cout << "Account is found" << endl;
+        userFound = true;
+        return userFound;
     }
-    inFile.close();
     userFound = false;
     return false;
 }
@@ -212,9 +404,12 @@ void Authentication::handleEvents(Event& event) {
         int tileX = x / ts;
         int tileY = y / ts;
         cout << tileX << " " << tileY << endl;
-       
+        
         if (tileX >= 27 && tileX <= 33 && tileY >= 23 && tileY <= 25) {
             subState = 1;
+            username = "";
+            password = "";
+
         }
         cout << subState << endl;
     }
@@ -243,7 +438,17 @@ void Authentication::handleEvents(Event& event) {
                         password = "";
                     }
                     else {
-                        state = 3;
+                        numTimes -= 1;
+                        if (numTimes != 0) {
+                            subState = 0;
+                            state0state = 0;
+                            username = "";
+                            password = "";
+                        }
+                        else {
+                            state = 4;
+                        }
+                       
                     }
 
                 }
@@ -283,7 +488,16 @@ void Authentication::handleEvents(Event& event) {
                         password2 = "";
                     }
                     else {
-                        state = 3;
+                        numTimes -= 1;
+                        if (numTimes != 0) {
+                            subState = 0;
+                            state0state = 0;
+                            username2 = "";
+                            password2 = "";
+                        }
+                        else {
+                            state = 3;
+                        }
                     }
                 }
             }
@@ -303,9 +517,7 @@ void Authentication::handleEvents(Event& event) {
     }
 }
 void Authentication::render(RenderWindow& win) {
-    
-   
-
+  
     if (subState == 0) {
         window.draw(logSp);
 
@@ -386,7 +598,244 @@ void drop(int y, int x)
     if (grid[y][x - 1] == 0) drop(y, x - 1);
     if (grid[y][x + 1] == 0) drop(y, x + 1);
 }
+// Singular Mode
+void SingularMode::handleEvents(Event& event) {
+    if (event.type == Event::KeyPressed) {
+        if (event.key.code == Keyboard::Escape) {
+            for (int i = 1;i < M - 1;i++)
+                for (int j = 1;j < N - 1;j++)
+                    grid[i][j] = 0;
 
+            x = 10;y = 0;
+            Game = true;
+        }
+        
+    }
+    
+}
+
+void SingularMode::run() {
+    if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;dy = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::Up)) { dx = 0;dy = -1; };
+    if (Keyboard::isKeyPressed(Keyboard::Down)) { dx = 0;dy = 1; };
+    float time = clock.getElapsedTime().asSeconds();
+    clock.restart();
+    timer += time;
+
+    if (!Game) {
+        state = 5;
+    }
+
+    if (timer > delay)
+    {
+        x += dx;
+        y += dy;
+
+        if (x < 0) x = 0; if (x > N - 1) x = N - 1;
+        if (y < 0) y = 0; if (y > M - 1) y = M - 1;
+
+        if (grid[y][x] == 2) Game = false; // hit own trail
+        if (grid[y][x] == 0) grid[y][x] = 2; // trail creation
+        timer = 0;
+    }
+
+    for (int i = 0;i < enemyCount;i++) a[i].move();
+
+    if (grid[y][x] == 1)
+    {
+        dx = dy = 0;
+
+        for (int i = 0;i < enemyCount;i++)
+            drop(a[i].y / ts, a[i].x / ts);
+
+        for (int i = 0;i < M;i++)
+            for (int j = 0;j < N;j++)
+                if (grid[i][j] == -1) grid[i][j] = 0;
+                else grid[i][j] = 1;
+    }
+
+    for (int i = 0;i < enemyCount;i++)
+        if (grid[a[i].y / ts][a[i].x / ts] == 2) Game = false;
+}
+
+void SingularMode::render(RenderWindow& window) {
+    window.clear();
+
+    for (int i = 0;i < M;i++)
+        for (int j = 0;j < N;j++)
+        {
+            if (grid[i][j] == 0) continue;
+            if (grid[i][j] == 1) sTile.setTextureRect(IntRect(0, 0, ts, ts));
+            if (grid[i][j] == 2) sTile.setTextureRect(IntRect(90, 0, ts, ts));
+            sTile.setPosition(j * ts, i * ts);
+            window.draw(sTile);
+        }
+
+    sTile.setTextureRect(IntRect(60, 0, ts, ts));
+    sTile.setPosition(x * ts, y * ts);
+    window.draw(sTile);
+
+    sEnemy.rotate(10);
+    for (int i = 0;i < enemyCount;i++)
+    {
+        sEnemy.setPosition(a[i].x, a[i].y);
+        window.draw(sEnemy);
+    }
+
+    if (!Game) window.draw(sGameover);
+}
+// Multiplayer Mode
+void MultiPlayerMode::handleEvents(Event& event) {
+    if (event.type == Event::KeyPressed) {
+        if (event.key.code == Keyboard::Escape) {
+            for (int i = 1;i < M - 1;i++)
+                for (int j = 1;j < N - 1;j++)
+                    grid[i][j] = 0;
+            x = 10;y = 0;
+
+            Game = true;
+        }
+    }
+}
+
+void MultiPlayerMode::run() {
+    
+    if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;dy = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::Up)) { dx = 0;dy = -1; };
+    if (Keyboard::isKeyPressed(Keyboard::Down)) { dx = 0;dy = 1; };
+
+    if (Keyboard::isKeyPressed(Keyboard::A)) { dx2 = -1;dy2 = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::D)) { dx2 = 1;dy2 = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::S)) { dx2 = 0;dy2 = 1; };
+    if (Keyboard::isKeyPressed(Keyboard::W)) { dx2 = 0;dy2 = -1; };
+
+    float time = clock.getElapsedTime().asSeconds();
+    clock.restart();
+    timer += time;
+
+    if (!Game) {
+        state = 5;
+    }
+    if (Keyboard::isKeyPressed(Keyboard::Enter)) {
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                cout << grid[i][j] << " ";
+            }
+            cout << endl;
+        }
+        cout << endl;
+    }
+    if (timer > delay)
+    {
+        
+        x += dx;
+        y += dy;
+
+        x2 += dx2;
+        y2 += dy2;
+
+        
+
+        if (grid[y][x] == 2) Game = false; // hit own trail
+        if (grid[y][x] == 0) grid[y][x] = 2; // trail creation for player 1
+        if (grid[y2][x2] == 0) grid[y2][x2] = 3; // trail creation for player 2
+        timer = 0;
+    }
+
+    for (int i = 0;i < enemyCount;i++) a[i].move();
+
+    if (grid[y][x] == 1)
+    {
+        dx = dy = 0;
+
+        for (int i = 0;i < enemyCount;i++)                                              
+            drop(a[i].y / ts, a[i].x / ts);
+
+        for (int i = 0;i < M;i++)
+            for (int j = 0;j < N;j++)
+                if (grid[i][j] == -1) {
+                    grid[i][j] = 0;
+                }
+                else if (grid[i][j] == 0 || grid[i][j] == 2) {
+                    grid[i][j] = 4;      // Captured Tiles of Player 1
+                }
+                  
+    }
+    if (grid[y2][x2] == 1) {
+        dx2 = dy2 = 0;
+        for (int i = 0;i < enemyCount;i++)
+            drop(a[i].y / ts, a[i].x / ts);
+
+     
+
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                if (grid[i][j] == -1) {
+                    grid[i][j] = 0;
+                }
+                else if (grid[i][j] == 0 || grid[i][j] == 3) {
+                    grid[i][j] = 1;
+                }
+            }
+        }
+    }
+
+    for (int i = 0;i < enemyCount;i++)
+        if (grid[a[i].y / ts][a[i].x / ts] == 2 || grid[a[i].y / ts][a[i].x / ts] == 3) Game = false;
+}
+void MultiPlayerMode::render(RenderWindow& window) {
+    window.clear();
+    // 0 = empty space, 1 = Captured Tiles of Player 1, 2 = trail of Player 1, 3 = trail of player 2, 4 = captured tiles of player 2
+    for (int i = 0;i < M;i++)
+        for (int j = 0;j < N;j++)
+        {
+            if (grid[i][j] == 0) {
+                continue;
+            }
+            if (grid[i][j] == 1) {
+                sPlayer1.setTextureRect(IntRect(0, 0, ts, ts));
+                sPlayer1.setPosition(j * ts, i * ts);
+                window.draw(sPlayer1);
+            }
+            if (grid[i][j] == 2) {
+                sPlayer1.setTextureRect(IntRect(30, 0, ts, ts));
+                sPlayer1.setPosition(j * ts, i * ts);
+                window.draw(sPlayer1);
+            }
+            if (grid[i][j] == 3) {
+                sPlayer2.setTextureRect(IntRect(60, 0, ts, ts));
+                sPlayer2.setPosition(j * ts, i * ts);
+                window.draw(sPlayer2);
+            }
+            if (grid[i][j] == 4) {
+                sPlayer2.setTextureRect(IntRect(90, 0, ts, ts));
+                sPlayer2.setPosition(j * ts, i * ts);
+                window.draw(sPlayer2);
+            }
+           
+           
+        }
+
+    sPlayer1.setTextureRect(IntRect(120, 0, ts, ts));
+    sPlayer1.setPosition(x * ts, y * ts); 
+    window.draw(sPlayer1);
+
+    sPlayer2.setTextureRect(IntRect(150, 0, ts, ts));
+    sPlayer2.setPosition(x2 * ts, y2 * ts);
+    window.draw(sPlayer2);
+
+    sEnemy.rotate(10);
+    for (int i = 0;i < enemyCount;i++)
+    {
+        sEnemy.setPosition(a[i].x, a[i].y);
+        window.draw(sEnemy);
+    }
+
+    if (!Game) window.draw(sGameover);
+}
+// Main Loop
 void Game::start() {
 
     while (window.isOpen()) {
@@ -417,7 +866,10 @@ int main()
 
     RenderWindow window(VideoMode(N * ts, M * ts), "Xonix Game!");
     window.setFramerateLimit(60);
-    Game game(window);
+    PlayerProfile* players = new PlayerProfile;
+    players->ReadPlayers();
+    players->display();
+    Game game(window,players);
     game.start();
    
 

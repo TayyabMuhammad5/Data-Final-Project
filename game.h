@@ -8,20 +8,36 @@ using namespace sf;
 const int M = 25;
 const int N = 40;
 bool isSleep = 0;
-int state = 1; // 1 = title, 2 = menu, 3 =  
+int state = 1; // 1 = title, 2 = menu, 3 = Singular Mode
 int grid[M][N] = { 0 };
 int ts = 30; //tile size
 
+
 struct Player {
-    string name;
-    string password;
+    string name = "";
+    string password = "";
     int score = 0;
     int TotalScore = 0;
     int noOfMatches = 0;
     int HighestScore = 0;
-    Player* FriendsList = nullptr;
-    int matchHistory[50];
+    string* friendNames = nullptr;
+    int* matchHistory = nullptr;
+    int numfriends = 0;
+    Player() {
+
+    }
+    void operator=(const Player& tmp) {
+       name = tmp.name;
+       password = tmp.password;
+       score = tmp.score;
+       TotalScore = tmp.TotalScore;
+       noOfMatches = tmp.noOfMatches;
+       HighestScore = tmp.HighestScore;
+       friendNames = tmp.friendNames;
+       matchHistory = tmp.matchHistory;
+    }
 };
+
 class PlayerProfile {
 private:
     Player* players;
@@ -36,6 +52,17 @@ public:
         players = nullptr;
     }
     void ReadPlayers();
+    int CheckUsername(string name);
+    int CheckPassword(string name);
+    void Addplayer(string username, string password);
+    void WritePlayers();
+    void display();
+    int& getPlayer1() {
+        return currentPlayer1;
+    }
+    int& getPlayer2() {
+        return currentPlayer2;
+    }
 };
 struct Enemy
 {
@@ -57,6 +84,8 @@ struct Enemy
 
 class Authentication {
 private:
+    int numTimes;
+    PlayerProfile* profile;
     char enteredChar;
     RenderWindow& window;
     string username;
@@ -74,7 +103,8 @@ private:
     bool isPassCorrect = true;
     bool isAlreadyPresent = false;
 public:
-    Authentication(RenderWindow& window) :window(window) {
+    Authentication(RenderWindow& window,PlayerProfile* player) :window(window), profile(player) {
+        numTimes = 0;
         enteredChar = '\0';
         username = "";
         password = "";
@@ -82,7 +112,7 @@ public:
         password2 = "";
         subState = 0;
         if (!log.loadFromFile("images/Login.jpg")) {
-            cout << "faltu" << endl;
+           
         }
         sign.loadFromFile("images/Sign-In.jpg");
         logSp.setTexture(log);
@@ -90,6 +120,9 @@ public:
         font.loadFromFile("images/Arial.ttf");
         nameT.setFont(font);
         passT.setFont(font);
+    }
+    int& getNumTimes() {
+        return numTimes;
     }
     bool signUp(string user, string pass);
     bool logIn(string user, string pass);
@@ -119,6 +152,7 @@ public:
 };
 class Menu : public State {
 private:
+    PlayerProfile* profile;
     Authentication auth;
     int numOptions;
     string* optionNames;
@@ -132,7 +166,7 @@ private:
     bool isAuthenticationOn;
     bool isSecondAuthenticationOn;
 public:
-    Menu(RenderWindow& render_window) :window(render_window),auth(render_window) {
+    Menu(RenderWindow& render_window, PlayerProfile* player) :window(render_window),auth(render_window,profile),profile(player) {
         numOptions = 7;
         optionNames = new string[numOptions]{ "Singular Mode","Multiplayer Mode","Match Making","Change Theme","Set Difficulty Level","Leader Board","Exit" };
         buttons = new RectangleShape[numOptions];
@@ -152,6 +186,75 @@ public:
     void run() override;
     void render(RenderWindow& window) override;
 };
+class SingularMode : public State {
+private:
+    PlayerProfile* profile;
+    Texture t1, t2, t3;
+    Sprite sTile, sGameover, sEnemy;
+    int enemyCount = 4;
+    Enemy a[10];
+    bool Game;
+    int x = 0, y = 0, dx = 0, dy = 0;
+    float timer, delay;
+    Clock clock;
+public:
+    SingularMode(PlayerProfile* player): profile(player) {
+        t1.loadFromFile("images/tiles_30.png");
+        t2.loadFromFile("images/gameover.png");
+        t3.loadFromFile("images/enemy.png");
+        sTile.setTexture(t1);
+        sGameover.setTexture(t2);
+        sEnemy.setTexture(t3);
+        Game = true;
+        sGameover.setPosition(100, 100);
+        sEnemy.setOrigin(20, 20);
+        delay = 0.07;
+        timer = 0;
+        for (int i = 0;i < M;i++)
+            for (int j = 0;j < N;j++)
+                if (i == 0 || j == 0 || i == M - 1 || j == N - 1)  grid[i][j] = 1;
+    }
+    void handleEvents(Event& event) override;
+    void run() override;
+    void render(RenderWindow& window) override;
+};
+class MultiPlayerMode : public State {
+private:
+    PlayerProfile* profile;
+    Texture t1, t2, t3;
+    Sprite sPlayer1, sGameover, sEnemy, sPlayer2;
+    int enemyCount = 4;
+    Enemy a[10];
+    bool Game;
+    int x = 0, y = 0, dx = 0, dy = 0,x2 = 20, y2 = 0, dx2 = 0, dy2 = 0;
+    float timer, delay;
+    char keyPressed_Player1;
+    char keyPressed_Player2;
+    Clock clock;
+public:
+    MultiPlayerMode(PlayerProfile* player) : profile(player) {
+        t1.loadFromFile("images/tiles_30.png");
+        t2.loadFromFile("images/gameover.png");
+        t3.loadFromFile("images/enemy.png");
+        sPlayer1.setTexture(t1);
+        sPlayer2.setTexture(t1);
+        sGameover.setTexture(t2);
+        sEnemy.setTexture(t3);
+        Game = true;
+        sGameover.setPosition(100, 100);
+        sEnemy.setOrigin(20, 20);
+        delay = 0.07;
+        timer = 0;
+        for (int i = 0;i < M;i++)
+            for (int j = 0;j < N;j++)
+                if (i == 0 || j == 0 || i == M - 1 || j == N - 1)  grid[i][j] = 1;
+        keyPressed_Player1 = '\0';
+        keyPressed_Player2 = '\0';
+    }
+    void handleEvents(Event& event) override;
+    void run() override;
+    void render(RenderWindow& window) override;
+};
 class StateManager {
 
 private:
@@ -159,8 +262,10 @@ private:
     bool isChanged;
 	int substate;
     RenderWindow& window;
+    PlayerProfile* profile;
 public:
-    StateManager(RenderWindow& render_window):window(render_window) {
+    StateManager(RenderWindow& render_window,PlayerProfile* player):window(render_window) {
+        profile = player;
         isChanged = 0;
         substate = state;
         state_class = new Title;
@@ -175,8 +280,9 @@ class Game {
 private:
 	StateManager state_manager;
 	RenderWindow& window;
+    PlayerProfile* profile;
 public:
-	Game(RenderWindow& render_window) :window(render_window),state_manager(render_window){};
+	Game(RenderWindow& render_window,PlayerProfile* player) :window(render_window),state_manager(render_window,player),profile(player){};
 	void start();
 };
 
