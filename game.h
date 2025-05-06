@@ -77,8 +77,8 @@ struct Enemy
 
     void move()
     {
-        x += dx; if (grid[y / ts][x / ts] == 1) { dx = -dx; x += dx; }
-        y += dy; if (grid[y / ts][x / ts] == 1) { dy = -dy; y += dy; }
+        x += dx; if (grid[y / ts][x / ts] == 1 || grid[y / ts][x / ts] == 4 || grid[y / ts][x / ts] == 2) { dx = -dx; x += dx; }
+        y += dy; if (grid[y / ts][x / ts] == 1 || grid[y / ts][x / ts] == 4 || grid[y / ts][x / ts] == 2) { dy = -dy; y += dy; }
     }
 };
 
@@ -102,7 +102,7 @@ private:
     bool userFound = true;
     bool isPassCorrect = true;
     bool isAlreadyPresent = false;
-
+    bool isDouble = false;
 public:
     Authentication(RenderWindow& window,PlayerProfile* player) :window(window), profile(player) {
         numTimes = 0;
@@ -208,7 +208,7 @@ public:
         sEnemy.setTexture(t3);
         Game = true;
         sGameover.setPosition(100, 100);
-        sEnemy.setOrigin(20, 20);
+        sEnemy.setOrigin(25, 25);
         delay = 0.07;
         timer = 0;
         for (int i = 0;i < M;i++)
@@ -243,7 +243,7 @@ public:
         sEnemy.setTexture(t3);
         Game = true;
         sGameover.setPosition(100, 100);
-        sEnemy.setOrigin(20, 20);
+        sEnemy.setOrigin(25, 25);
         delay = 0.07;
         timer = 0;
         for (int i = 0;i < M;i++)
