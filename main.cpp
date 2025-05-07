@@ -646,6 +646,7 @@ void SingularMode::handleEvents(Event& event) {
 }
 
 void SingularMode::run() {
+  
     if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
     if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;dy = 0; };
     if (Keyboard::isKeyPressed(Keyboard::Up)) { dx = 0;dy = -1; };
@@ -655,41 +656,105 @@ void SingularMode::run() {
     timer += time;
 
     if (!Game) {
-        state = 5;
+       
+        if (state != 5){  
+            profile->addScore(score, 1);
+            state = 5;
+        }
+        return;
     }
+
 
     if (timer > delay)
     {
         x += dx;
         y += dy;
+        
 
         if (x < 0) x = 0; if (x > N - 1) x = N - 1;
         if (y < 0) y = 0; if (y > M - 1) y = M - 1;
 
         if (grid[y][x] == 2) Game = false; // hit own trail
-        if (grid[y][x] == 0) grid[y][x] = 2; // trail creation
+        if (grid[y][x] == 0) {
+           
+            grid[y][x] = 2; // trail creation
+        }
         timer = 0;
     }
 
     for (int i = 0;i < enemyCount;i++) a[i].move();
 
-    if (grid[y][x] == 1)
-    {
+    if (grid[y][x] == 1) {
         dx = dy = 0;
 
-        for (int i = 0;i < enemyCount;i++)
+        // Mark enemy positions
+        for (int i = 0; i < enemyCount; i++)
             drop(a[i].y / ts, a[i].x / ts);
 
-        for (int i = 0;i < M;i++)
-            for (int j = 0;j < N;j++)
-                if (grid[i][j] == -1) grid[i][j] = 0;
-                else grid[i][j] = 1;
+        for (int i = 0; i < M; i++)
+            for (int j = 0; j < N; j++)
+                if (grid[i][j] == 2)
+                    grid[i][j] = 6;
+
+        for (int i = 0; i < M; i++) {
+            if (grid[i][0] == 0) FloodFill(i, 0);
+            if (grid[i][N - 1] == 0) FloodFill(i, N - 1);
+        }
+        for (int j = 0; j < N; j++) {
+            if (grid[0][j] == 0) FloodFill(0, j);
+            if (grid[M - 1][j] == 0) FloodFill(M - 1, j);
+        }
+
+
+        int captured = 0;
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                if (grid[i][j] == -1) {
+                    grid[i][j] = 0;
+                }
+                else if (grid[i][j] == 0) {
+                    grid[i][j] = 1;
+                    captured++;
+                }
+                else if (grid[i][j] == 6) {
+                    grid[i][j] = 1;
+                    captured++;
+                }
+            }
+        }
+        if (occurence > 3) {
+            threshold = 5;
+        }
+        else if (occurence>5) {
+            multiple = 4;
+        }
+        if (captured > threshold) {
+            captured *= multiple;
+            occurence++;
+            cout << occurence << endl;
+            
+        }
+       ;
+        score += captured;
+       
+       
     }
 
+  
     for (int i = 0;i < enemyCount;i++)
         if (grid[a[i].y / ts][a[i].x / ts] == 2) Game = false;
 }
 
+void SingularMode::FloodFill(int i, int j) {
+    if (i < 0 || j < 0 || i >= M || j >= N || grid[i][j] != 0) {
+        return;
+    }
+    grid[i][j] = -1;
+    FloodFill(i + 1, j);
+    FloodFill(i - 1, j);
+    FloodFill(i, j + 1);
+    FloodFill(i, j - 1);
+}
 void SingularMode::render(RenderWindow& window) {
     window.clear();
 

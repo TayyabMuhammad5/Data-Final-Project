@@ -60,6 +60,28 @@ public:
     int& getPlayer1() {
         return currentPlayer1;
     }
+    void addScore(int s, int i) {
+        if (i == 1 && currentPlayer1 != -1) {
+            players[currentPlayer1].score = s;
+            players[currentPlayer1].TotalScore += s;
+            players[currentPlayer1].noOfMatches++;
+            if (s > players[currentPlayer1].HighestScore) {
+                players[currentPlayer1].HighestScore = s;
+            }
+            WritePlayers();  
+        }
+        else if (i == 2 && currentPlayer2 != -1) {
+            players[currentPlayer2].score = s;
+            players[currentPlayer2].TotalScore += s;
+            players[currentPlayer2].noOfMatches++;
+
+            if (s > players[currentPlayer2].HighestScore) {
+                players[currentPlayer2].HighestScore = s;
+            }
+            WritePlayers();  
+        }
+    }
+
     int& getPlayer2() {
         return currentPlayer2;
     }
@@ -198,8 +220,11 @@ private:
     int x = 0, y = 0, dx = 0, dy = 0;
     float timer, delay;
     Clock clock;
+    int score = 0;
+    int occurence = 0, threshold = 10, multiple = 2;
 public:
     SingularMode(PlayerProfile* player) : profile(player) {
+        
         t1.loadFromFile("images/tiles_30.png");
         t2.loadFromFile("images/gameover.png");
         t3.loadFromFile("images/enemy.png");
@@ -218,6 +243,7 @@ public:
     void handleEvents(Event& event) override;
     void run() override;
     void render(RenderWindow& window) override;
+    void FloodFill(int, int);
 };
 class MultiPlayerMode : public State {
 private:
@@ -232,6 +258,10 @@ private:
     char keyPressed_Player1;
     char keyPressed_Player2;
     Clock clock;
+    int score1 = 0;
+    int occurence1 = 0, threshold1 = 10, multiple1 = 2;
+    int score2 = 0;
+    int occurence2 = 0, threshold2 = 10, multiple2 = 2;
 public:
     MultiPlayerMode(PlayerProfile* player) : profile(player) {
         t1.loadFromFile("images/tiles_30.png");
@@ -255,6 +285,7 @@ public:
     void handleEvents(Event& event) override;
     void run() override;
     void render(RenderWindow& window) override;
+    void FloodFill(int, int);
 };
 class StateManager {
 
