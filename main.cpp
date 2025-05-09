@@ -944,7 +944,14 @@ void SingularMode::render(RenderWindow& window) {
     sTile.setTextureRect(IntRect(60, 0, ts, ts));
     sTile.setPosition(x * ts, y * ts);
     window.draw(sTile);
-
+    scoree.setFillColor(Color::Red);
+    scoree.setPosition(5, 3);
+    scoree.setCharacterSize(24);
+    scoree.setString("Player 1: ");
+    window.draw(scoree);
+    scoree.setPosition(250, 3);
+    scoree.setString(to_string(score));
+    window.draw(scoree);
     sEnemy.rotate(20);
     for (int i = 0;i < enemyCount;i++)
     {
@@ -972,15 +979,15 @@ void MultiPlayerMode::run() {
 
     // 0 = empty space, 1 = boundary (blue) , 2 = player 1 captured tiles, 3 = player 1 trail (red) , 4 = player 2 captured tiles (green) , 5 = player 2 trail (golden)
 
-    if (Keyboard::isKeyPressed(Keyboard::A)) { dx = -1;dy = 0; };
-    if (Keyboard::isKeyPressed(Keyboard::D)) { dx = 1;dy = 0; };
-    if (Keyboard::isKeyPressed(Keyboard::W)) { dx = 0;dy = -1; };
-    if (Keyboard::isKeyPressed(Keyboard::S)) { dx = 0;dy = 1; };
-
     if (Keyboard::isKeyPressed(Keyboard::Left)) { dx2 = -1;dy2 = 0; };
     if (Keyboard::isKeyPressed(Keyboard::Right)) { dx2 = 1;dy2 = 0; };
-    if (Keyboard::isKeyPressed(Keyboard::Down)) { dx2 = 0;dy2 = 1; };
     if (Keyboard::isKeyPressed(Keyboard::Up)) { dx2 = 0;dy2 = -1; };
+    if (Keyboard::isKeyPressed(Keyboard::Down)) { dx2 = 0;dy2 = 1; };
+
+    if (Keyboard::isKeyPressed(Keyboard::A)) { dx = -1;dy = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::D)) { dx = 1;dy = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::S)) { dx = 0;dy = 1; };
+    if (Keyboard::isKeyPressed(Keyboard::W)) { dx = 0;dy = -1; };
 
     float time = clock.getElapsedTime().asSeconds();
     clock.restart();

@@ -293,6 +293,7 @@ class SendRequest {
 };
 class SingularMode : public State {
 private:
+    Font font;
     PlayerProfile* profile;
     Texture t1, t2, t3;
     Sprite sTile, sGameover, sEnemy;
@@ -302,6 +303,7 @@ private:
     int x = 0, y = 0, dx = 0, dy = 0;
     float timer, delay;
     Clock clock;
+    Text scoree;
     int score = 0;
     int occurence = 0, threshold = 10, multiple = 2;
 public:
@@ -321,6 +323,10 @@ public:
         for (int i = 0;i < N; i++) {
             grid[0][i] = -2;
         }
+        if (!font.loadFromFile("images/arial.ttf")) {
+            std::cerr << "Could not load font.\n";
+        }
+        scoree.setFont(font);
         for (int i = 0;i < M;i++)
             for (int j = 0;j < N;j++)
                 if (i == 0 || j == 0 || i == M - 1 || j == N - 1)  grid[i][j] = 1;
