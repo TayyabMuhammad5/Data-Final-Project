@@ -438,7 +438,7 @@ void Authentication::handleEvents(Event& event) {
                         password = "";
                     }
                     else {
-                        // numTimes -= 1;
+                       // numTimes -= 1;
                         if (numTimes == 1 && !isDouble) {
                             state = 3;
                         }
@@ -646,7 +646,7 @@ void SingularMode::handleEvents(Event& event) {
 }
 
 void SingularMode::run() {
-
+  
     if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
     if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;dy = 0; };
     if (Keyboard::isKeyPressed(Keyboard::Up)) { dx = 0;dy = -1; };
@@ -656,12 +656,12 @@ void SingularMode::run() {
     timer += time;
 
     if (!Game) {
-
+        
         cout << profile->getPlayer1() << endl;
-        profile->addScore(score, 1);
-        profile->display();
-        state = 2;
-
+          profile->addScore(score, 1);
+          profile->display();
+          state = 2;
+            
         return;
     }
 
@@ -670,14 +670,14 @@ void SingularMode::run() {
     {
         x += dx;
         y += dy;
-
+        
 
         if (x < 0) x = 0; if (x > N - 1) x = N - 1;
         if (y < 0) y = 0; if (y > M - 1) y = M - 1;
 
         if (grid[y][x] == 2) Game = false; // hit own trail
         if (grid[y][x] == 0) {
-
+           
             grid[y][x] = 2; // trail creation
         }
         timer = 0;
@@ -726,22 +726,22 @@ void SingularMode::run() {
         if (occurence > 3) {
             threshold = 5;
         }
-        else if (occurence > 5) {
+        else if (occurence>5) {
             multiple = 4;
         }
         if (captured > threshold) {
             captured *= multiple;
             occurence++;
             cout << occurence << endl;
-
+            
         }
-        ;
+       ;
         score += captured;
         cout << score << endl;
-
+       
     }
 
-
+  
     for (int i = 0;i < enemyCount;i++)
         if (grid[a[i].y / ts][a[i].x / ts] == 2) Game = false;
 }
@@ -987,7 +987,7 @@ int main()
     window.setFramerateLimit(60);
     PlayerProfile* players = new PlayerProfile;
     players->ReadPlayers();
-    /* players->display();*/
+   /* players->display();*/
     Game game(window, players);
     game.start();
 
