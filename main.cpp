@@ -362,7 +362,7 @@ bool Authentication::signUp(string user, string pass) {
     }
     else {
         profile->Addplayer(user, pass);
-        if (profile->getPlayer1() != -1) {
+        if (profile->getPlayer1() == -1) {
             profile->getPlayer1() = profile->CheckUsername(user);
         }
         else {
@@ -379,7 +379,7 @@ bool Authentication::signUp(string user, string pass) {
 bool Authentication::logIn(string user, string pass) {
     string line;
     if (profile->CheckUsername(user) != -1 && profile->CheckPassword(pass) != -1) {
-        if (profile->getPlayer1() != -1) {
+        if (profile->getPlayer1() == -1) {
             profile->getPlayer1() = profile->CheckUsername(user);
         }
         else {
@@ -656,11 +656,12 @@ void SingularMode::run() {
     timer += time;
 
     if (!Game) {
-       
-        if (state != 5){  
-            profile->addScore(score, 1);
-            state = 5;
-        }
+        
+        cout << profile->getPlayer1() << endl;
+          profile->addScore(score, 1);
+          profile->display();
+          state = 2;
+            
         return;
     }
 
@@ -736,7 +737,7 @@ void SingularMode::run() {
         }
        ;
         score += captured;
-       
+        cout << score << endl;
        
     }
 
@@ -986,7 +987,7 @@ int main()
     window.setFramerateLimit(60);
     PlayerProfile* players = new PlayerProfile;
     players->ReadPlayers();
-    players->display();
+   /* players->display();*/
     Game game(window, players);
     game.start();
 
