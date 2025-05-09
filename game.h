@@ -8,7 +8,7 @@ using namespace sf;
 const int M = 25;
 const int N = 40;
 bool isSleep = 0;
-int state = 1; // 1 = title, 2 = menu, 3 = Singular Mode
+int state = 1; // 1 = title, 2 = menu, 3 = subMenu, 4 = Singular Mode, 5 = Multiplayer Mode 
 int grid[M][N] = { 0 };
 int ts = 30; //tile size
 
@@ -24,7 +24,7 @@ struct Player {
     int* matchHistory = nullptr;
     int numfriends = 0;
     Player() {
-
+        //friendNames = new string[100];
     }
     void operator=(const Player& tmp) {
         name = tmp.name;
@@ -60,6 +60,8 @@ public:
     int& getPlayer1() {
         return currentPlayer1;
     }
+    string getPlayerName(int num);
+    int getScore(int num);
     void addScore(int s, int i) {
         if (i == 1 && currentPlayer1 != -1) {
             players[currentPlayer1].score = s;
@@ -68,7 +70,7 @@ public:
             if (s > players[currentPlayer1].HighestScore) {
                 players[currentPlayer1].HighestScore = s;
             }
-            WritePlayers();  
+            WritePlayers();
         }
         else if (i == 2 && currentPlayer2 != -1) {
             players[currentPlayer2].score = s;
@@ -78,10 +80,25 @@ public:
             if (s > players[currentPlayer2].HighestScore) {
                 players[currentPlayer2].HighestScore = s;
             }
-            WritePlayers();  
+            WritePlayers();
         }
     }
-
+    void addFriend(string username,int i) {
+        if (i == 1 && currentPlayer1 != -1) {
+            players[currentPlayer1].friendNames[players[currentPlayer1].numfriends] = username;
+            players[currentPlayer1].numfriends++;   
+        }
+    }
+    int getNumFriends() {
+       if(currentPlayer1!=-1)
+        return players[currentPlayer1].numfriends;
+    }
+    void displayFriends() {
+        for (int i = 0;i < players[currentPlayer1].numfriends;i++) {
+            cout << players[currentPlayer1].friendNames[i] << " ";
+        }
+        cout << endl;
+    }
     int& getPlayer2() {
         return currentPlayer2;
     }
@@ -209,6 +226,71 @@ public:
     void run() override;
     void render(RenderWindow& window) override;
 };
+
+class SubMenu : public State {
+private:
+    //int subState;
+    int numOptions;
+    string* optionNames;
+    RectangleShape* buttons;
+    Text* text;
+    Font font;
+    Texture backGroundTexture;
+    Sprite backGroundSprite;
+    Text menuName;
+public:
+    SubMenu() {
+        numOptions = 6;
+        optionNames = new string[numOptions]{ "Start Game","Select Difficulty Level","Change Theme","Load Saved Game","Friends","Exit" };
+        buttons = new RectangleShape[numOptions];
+        text = new Text[numOptions];
+
+        if (!font.loadFromFile("images/arial.ttf")) {
+            std::cerr << "Could not load font.\n";
+        }
+        if (!backGroundTexture.loadFromFile("images/Menu.jpg")) {
+            cout << "Image was not loaded" << endl;
+        }
+        backGroundSprite.setTexture(backGroundTexture);
+    }
+    void handleEvents(Event& event) override;
+    void run() override;
+    void render(RenderWindow& window) override;
+};
+class Friends :public State{
+private:
+    //int subState;
+    PlayerProfile* players;
+    int numOptions;
+    string* optionNames;
+    RectangleShape* buttons;
+    Text* text;
+    Font font;
+    Texture backGroundTexture;
+    Sprite backGroundSprite;
+    Text menuName;
+public:
+    Friends(PlayerProfile* player) :players(player){
+        numOptions = 4;
+        optionNames = new string[numOptions]{ "Friends","Send Requests","Accept Requests","Exit" };
+        buttons = new RectangleShape[numOptions];
+        text = new Text[numOptions];
+
+        if (!font.loadFromFile("images/arial.ttf")) {
+            std::cerr << "Could not load font.\n";
+        }
+        if (!backGroundTexture.loadFromFile("images/Menu.jpg")) {
+            cout << "Image was not loaded" << endl;
+        }
+        backGroundSprite.setTexture(backGroundTexture);
+    }
+    void handleEvents(Event& event) override;
+    void run() override;
+    void render(RenderWindow& window) override;
+};
+class SendRequest {
+
+};
 class SingularMode : public State {
 private:
     PlayerProfile* profile;
@@ -224,7 +306,7 @@ private:
     int occurence = 0, threshold = 10, multiple = 2;
 public:
     SingularMode(PlayerProfile* player) : profile(player) {
-        
+
         t1.loadFromFile("images/tiles_30.png");
         t2.loadFromFile("images/gameover.png");
         t3.loadFromFile("images/enemy.png");
@@ -236,6 +318,9 @@ public:
         sEnemy.setOrigin(25, 25);
         delay = 0.07;
         timer = 0;
+        for (int i = 0;i < N; i++) {
+            grid[0][i] = -2;
+        }
         for (int i = 0;i < M;i++)
             for (int j = 0;j < N;j++)
                 if (i == 0 || j == 0 || i == M - 1 || j == N - 1)  grid[i][j] = 1;
@@ -253,7 +338,8 @@ private:
     int enemyCount = 4;
     Enemy a[10];
     bool Game;
-    int x = 0, y = 0, dx = 0, dy = 0, x2 = 20, y2 = 0, dx2 = 0, dy2 = 0;
+    Font font;
+    int x = 0, y = 1, dx = 0, dy = 0, x2 = 20, y2 = 1, dx2 = 0, dy2 = 0;
     float timer, delay;
     char keyPressed_Player1;
     char keyPressed_Player2;
@@ -262,6 +348,10 @@ private:
     int occurence1 = 0, threshold1 = 10, multiple1 = 2;
     int score2 = 0;
     int occurence2 = 0, threshold2 = 10, multiple2 = 2;
+    bool isPlayer1Dead = false, isPlayer2Dead = false;
+    Text score;
+    int tileCount1 = 0;
+    int rewardCounter1 = 0;
 public:
     MultiPlayerMode(PlayerProfile* player) : profile(player) {
         t1.loadFromFile("images/tiles_30.png");
@@ -276,15 +366,21 @@ public:
         sEnemy.setOrigin(25, 25);
         delay = 0.07;
         timer = 0;
-        for (int i = 0;i < M;i++)
+        for (int i = 1;i < M;i++)
             for (int j = 0;j < N;j++)
-                if (i == 0 || j == 0 || i == M - 1 || j == N - 1)  grid[i][j] = 1;
+                if (i == 1 || j == 0 || i == M - 1 || j == N - 1)  grid[i][j] = 1;
         keyPressed_Player1 = '\0';
         keyPressed_Player2 = '\0';
+        if (!font.loadFromFile("images/arial.ttf")) {
+            std::cerr << "Could not load font.\n";
+        }
+        score.setFont(font);
+
     }
     void handleEvents(Event& event) override;
     void run() override;
     void render(RenderWindow& window) override;
+
     void FloodFill(int, int);
 };
 class StateManager {
