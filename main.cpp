@@ -464,7 +464,6 @@ void Friends::handleEvents(Event& event) {
         }
     }
 }
-
 void Friends::run() {
 
     menuName.setCharacterSize(50);
