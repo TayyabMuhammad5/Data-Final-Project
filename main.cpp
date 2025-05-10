@@ -932,8 +932,10 @@ void SingularMode::run() {
         timer = 0;
     }
 
-    for (int i = 0;i < enemyCount;i++) a[i].move();
-
+    for (int i = 0;i < enemyCount;i++) {
+        a[i].move();
+       
+    }
     if (grid[y][x] == 1) {
         dx = dy = 0;
 
@@ -972,6 +974,11 @@ void SingularMode::run() {
                 }
             }
         }
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                if (grid[i][j] == 6) grid[i][j] = 2; // Restore trails
+            }
+        }
         if (occurence > 3) {
             threshold = 5;
         }
@@ -991,8 +998,15 @@ void SingularMode::run() {
     }
 
 
-    for (int i = 0;i < enemyCount;i++)
-        if (grid[a[i].y / ts][a[i].x / ts] == 2) Game = false;
+    for (int i = 0; i < enemyCount; i++) {
+        int gridX = a[i].x / ts;
+        int gridY = a[i].y / ts;
+        if (grid[gridY][gridX] == 2 ) {
+            cout << "Enemy hit trail at (" << gridX << "," << gridY << ")" << endl;
+            Game = false;
+            break;  // No need to check other enemies
+        }
+    }
 }
 
 void SingularMode::FloodFill(int i, int j) {
