@@ -234,6 +234,9 @@ void StateManager::ChangeState(int state) {
     else if (state == 6) {
         state_class = new Friends(profile);
     }
+    else if (state == 7) {
+        state_class = new LeaderBoard(profile);
+    }
 
 }
 void StateManager::handleEvent(Event& e) {
@@ -294,6 +297,9 @@ void Menu::handleEvents(Event& event) {
                         // isAuthenticationOn = true;
                         // isSecondAuthenticationOn = true;
                         auth.getNumTimes() = 2;
+                    }
+                    else if (i == 5) {
+                        state = 7;
                     }
                 }
             }
@@ -489,6 +495,76 @@ void Friends::run() {
     }
 }
 void Friends::render(RenderWindow&window) {
+    window.draw(backGroundSprite);
+    window.draw(menuName);
+
+    for (int i = 0; i < numOptions; i++) {
+        int mouseX = Mouse::getPosition(window).x;
+        int mouseY = Mouse::getPosition(window).y;
+
+        if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouseX), static_cast<float>(mouseY))) {
+            // Hover effect here
+            buttons[i].setFillColor(sf::Color(100, 100, 100)); // grey box
+            text[i].setFillColor(sf::Color::Yellow);
+        }
+        else {
+            buttons[i].setFillColor(Color::Transparent);   // transparent background
+            text[i].setFillColor(Color::White);           // default font color
+        }
+    }
+
+    for (int i = 0; i < numOptions; i++) {
+        window.draw(buttons[i]);
+        window.draw(text[i]);
+    }
+}
+void LeaderBoard::handleEvents(Event& event) {
+    if (event.type == Event::MouseButtonPressed) {
+        if (event.mouseButton.button == Mouse::Left) {
+            int mouse_x = event.mouseButton.x;
+            int mouse_y = event.mouseButton.y;
+            for (int i = 0; i < numOptions; i++) {
+                if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouse_x), static_cast<float>(mouse_y))) {
+                    if (i == 0) {
+                       
+                    }
+                    else if (i == 1) {
+
+                    }
+                    else if (i == 2) {
+
+                    }
+                }
+            }
+        }
+    }
+}
+void LeaderBoard::run() {
+    sorting();
+    menuName.setCharacterSize(50);
+    menuName.setFont(font);
+    menuName.setFillColor(Color::White);
+    menuName.setString("LeaderBoard");
+    menuName.setPosition(550, 200);
+
+    for (int i = 0; i < numOptions; i++) {
+
+        buttons[i].setSize(Vector2f(350.0f, 50.0f));
+        buttons[i].setPosition(450, 290 + i * 46);
+        buttons[i].setFillColor(Color::Transparent);
+        buttons[i].setOutlineThickness(2);
+        buttons[i].setOutlineColor(Color::White);
+        buttons[i].setOrigin(0, 0);
+
+        text[i].setFont(font);
+        text[i].setString(topPlayers[i]);
+        //cout << topPlayers[i] << endl;
+        text[i].setCharacterSize(24);
+        text[i].setFillColor(Color::Black);
+        text[i].setPosition(460, 295 + i * 46);
+    }
+}
+void LeaderBoard::render(RenderWindow& window) {
     window.draw(backGroundSprite);
     window.draw(menuName);
 
@@ -832,6 +908,7 @@ void SingularMode::run() {
         cout << profile->getPlayer1() << endl;
         profile->addScore(score, 1);
         profile->display();
+        leaderboard.insert(profile->getPlayerObject(profile->getPlayer1()));
         state = 2;
 
         return;
@@ -1003,6 +1080,8 @@ void MultiPlayerMode::run() {
     }
     if (isPlayer1Dead && isPlayer2Dead) {
         Game = false;
+        leaderboard.insert(profile->getPlayerObject(profile->getPlayer1()));
+        leaderboard.insert(profile->getPlayerObject(profile->getPlayer2()));
     }
     if (isPlayer1Dead) {
         for (int i = 0; i < M; i++) {

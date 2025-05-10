@@ -51,6 +51,12 @@ public:
         numPlayers = 0;
         players = nullptr;
     }
+    Player getPlayerObject(int index) {
+        return players[index];
+    }
+    int getNumPlyaers() {
+        return numPlayers;
+    }
     void ReadPlayers();
     int CheckUsername(string name);
     int CheckPassword(string name);
@@ -291,8 +297,124 @@ public:
 class SendRequest {
 
 };
+class LeaderBoard :public State{
+    PlayerProfile* profile;
+    Player minheap[10];
+    int root;
+    int index;
+    int numOptions;
+    string *topPlayers;
+    Player temp[10];
+    RectangleShape* buttons;
+    Text* text;
+    Font font;
+    Texture backGroundTexture;
+    Sprite backGroundSprite;
+    Text menuName;
+    void heapifyDown(int i) {
+        int smallest = i;
+        int left = 2 * i + 1;
+        int right = 2 * i + 2;
+
+        if (left < index && minheap[left].TotalScore < minheap[smallest].TotalScore) {
+            smallest = left;
+        }
+        if (right < index && minheap[right].TotalScore < minheap[smallest].TotalScore) {
+            smallest = right;
+        }     
+        if (smallest != i) {
+            Player temp = minheap[i];
+            minheap[i] = minheap[smallest];
+            minheap[smallest] = temp;
+            heapifyDown(smallest);
+        }
+    }
+
+    void heapifyUp(int i) {
+        if (i == 0) 
+            return;
+        int parent = (i - 1) / 2;
+        if (minheap[i].TotalScore < minheap[parent].TotalScore) {
+            Player temp = minheap[i];
+            minheap[i] = minheap[parent];
+            minheap[parent] = temp;
+            heapifyUp(parent);
+        }
+    }
+
+public:
+    LeaderBoard(PlayerProfile* player) :profile(player){
+         root = 0;
+         index = 0;
+         numOptions = 10;
+         topPlayers = new string[numOptions];
+         buttons = new RectangleShape[numOptions];
+         text = new Text[numOptions];
+         for (int i = 0;i < numOptions;i++) {
+             topPlayers[i] = "";
+         }
+         if (!font.loadFromFile("images/arial.ttf")) {
+             std::cerr << "Could not load font.\n";
+         }
+         if (!backGroundTexture.loadFromFile("images/Menu.jpg")) {
+             cout << "Image was not loaded" << endl;
+         }
+         backGroundSprite.setTexture(backGroundTexture);
+         loadFromProfile();
+    }
+    void loadFromProfile() {
+        for (int i = 0; i < profile->getNumPlyaers(); i++) {
+            Player p = profile->getPlayerObject(i);
+            insert(p);
+        }
+    }
+    void insert(Player player) {
+        for (int i = 0; i < index; i++) {
+            if (minheap[i].name == player.name) {
+                minheap[i].TotalScore = player.TotalScore;
+                heapifyDown(i); 
+                heapifyUp(i);   
+                return;
+            }
+        }
+
+        if (index < 10) {
+            minheap[index] = player;
+            heapifyUp(index);
+            index++;
+        }
+        else if (player.TotalScore > minheap[0].TotalScore) {
+            minheap[0] = player;
+            heapifyDown(0);
+        }
+    }
+        
+    
+    void sorting() {
+        for (int i = 0;i < index;i++) {
+            temp[i] = minheap[i];
+       }
+        for (int i = 0;i < index-1;i++) {
+            for (int j = 0;j < index - i - 1;j++) {
+                if (temp[j].TotalScore < temp[j + 1].TotalScore) {
+                    Player tempe = temp[j];
+                    temp[j] = temp[j+1];
+                    temp[j+1] = tempe;
+                }
+            }
+        }
+        for (int i = 0;i < index;i++) {
+            topPlayers[i] = to_string(i+1)+". " + temp[i].name + "       "+to_string(temp[i].TotalScore);
+        }
+    }
+    void handleEvents(Event& event) override;
+    void run() override;
+    void render(RenderWindow& window) override;
+    
+};
 class SingularMode : public State {
 private:
+    LeaderBoard leaderboard;
     Font font;
     PlayerProfile* profile;
     Texture t1, t2, t3;
@@ -307,7 +429,7 @@ private:
     int score = 0;
     int occurence = 0, threshold = 10, multiple = 2;
 public:
-    SingularMode(PlayerProfile* player) : profile(player) {
+    SingularMode(PlayerProfile* player) : profile(player),leaderboard(player) {
 
         t1.loadFromFile("images/tiles_30.png");
         t2.loadFromFile("images/gameover.png");
@@ -338,6 +460,7 @@ public:
 };
 class MultiPlayerMode : public State {
 private:
+    LeaderBoard leaderboard;
     PlayerProfile* profile;
     Texture t1, t2, t3;
     Sprite sPlayer1, sGameover, sEnemy, sPlayer2;
@@ -359,7 +482,7 @@ private:
     int tileCount1 = 0;
     int rewardCounter1 = 0;
 public:
-    MultiPlayerMode(PlayerProfile* player) : profile(player) {
+    MultiPlayerMode(PlayerProfile* player) : profile(player),leaderboard(player) {
         t1.loadFromFile("images/tiles_30.png");
         t2.loadFromFile("images/gameover.png");
         t3.loadFromFile("images/enemy.png");
