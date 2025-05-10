@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <time.h>
 #include "game.h"
+#include "Matching.h"
 using namespace sf;
 
 
@@ -94,6 +95,9 @@ void PlayerProfile::ReadPlayers() {
                 players[numPlayers - 1].matchHistory[j++] = line[k] - '0';
             }
         }
+        else if (i == 8) {
+            players[numPlayers - 1].theme = line;
+        }
         i++;
     }
 }
@@ -128,9 +132,10 @@ void PlayerProfile::WritePlayers() {
             }
         }
         else {
-            outFile << "null";
+            outFile << "null" << '\n';
         }
-        outFile << '\n';
+        outFile <<  players[i].theme << '\n';
+       // outFile << '\n';
 
     }
 
@@ -139,6 +144,7 @@ void PlayerProfile::WritePlayers() {
 
 void PlayerProfile::display() {
 
+  //  cout << "numPlayers:" << numPlayers << endl;
     for (int i = 0;i < numPlayers; i++) {
 
         cout << "Name: " << players[i].name << endl;
@@ -148,15 +154,17 @@ void PlayerProfile::display() {
         cout << "Highest Score: " << players[i].HighestScore << endl;
         cout << "Number of Matches: " << players[i].noOfMatches << endl;
         cout << "Friends: ";
+        cout << players[i].numfriends << endl;
         for (int j = 0; j < players[i].numfriends; j++) {
             cout << players[i].friendNames[j] << ", ";
         }
-        cout << endl;
+        //cout << endl;
         cout << "Match History: ";
-        for (int j = 0; j < players[i].noOfMatches; j++) {
+       /* for (int j = 0; j < players[i].noOfMatches; j++) {
             cout << players[i].matchHistory[j] << ", ";
-        }
+        }*/
         cout << endl;
+        cout << "Theme: " << players[i].theme << endl;
     }
 }
 int PlayerProfile::CheckUsername(string username) {
@@ -191,6 +199,19 @@ void PlayerProfile::Addplayer(string username, string pass) {
     players = tmp;
     numPlayers += 1;
 }
+string PlayerProfile::getPlayerName(int num) {
+    if (num == 1) {
+        return players[currentPlayer1].name;
+    }
+    return players[currentPlayer2].name;
+}
+
+int PlayerProfile::getScore(int num) {
+    if (num == 1) {
+        return players[currentPlayer1].score;
+    }
+    return players[currentPlayer2].score;
+}
 // State Manager:
 bool StateManager::isStateChanged() {
     if (substate != state) {
@@ -200,19 +221,39 @@ bool StateManager::isStateChanged() {
     else
         return false;
 }
-void StateManager::ChangeState(int state) {
-    if (state == 1) {
+void StateManager::ChangeState(int newstate) {
+    if (state != newstate) {
+        prevState = state;
+        state = newstate;
+    }
+    if (state_class) {
+        delete state_class;
+    }
+    if (newstate == 1) {
         state_class = new Title;
     }
-    else if (state == 2) {
+    else if (newstate == 2) {
         state_class = new Menu(window, profile);
     }
-    else if (state == 3) {
+    else if (newstate == 3) {
+        state_class = new SubMenu();
+    }
+    else if (newstate == 4) {
         state_class = new SingularMode(profile);
     }
-    else if (state == 4) {
+    else if (newstate == 5) {
         state_class = new MultiPlayerMode(profile);
     }
+    else if (newstate == 6) {
+        state_class = new Inventory(profile);
+    }
+    else if (newstate == 7) {
+        state_class = new LeaderBoard(profile);
+    }
+    else if (newstate == 8 ) {
+        state_class = new MatchMaking(profile);
+    }
+    
 
 }
 void StateManager::handleEvent(Event& e) {
@@ -273,6 +314,12 @@ void Menu::handleEvents(Event& event) {
                         // isAuthenticationOn = true;
                         // isSecondAuthenticationOn = true;
                         auth.getNumTimes() = 2;
+                    }
+                    else if (i == 2) {
+                        state = 8;
+                    }
+                    else if (i == 5) {
+                        state = 7;
                     }
                 }
             }
@@ -339,7 +386,227 @@ void Menu::render(RenderWindow& window) {
         window.draw(text[i]);
     }
 
-    // window.display();
+    
+}
+// Sub-Menu
+void SubMenu::handleEvents(Event& event) {
+    
+    if (event.type == Event::MouseButtonPressed) {
+        if (event.mouseButton.button == Mouse::Left) {
+            int mouse_x = event.mouseButton.x;
+            int mouse_y = event.mouseButton.y;
+            for (int i = 0; i < numOptions; i++) {
+                if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouse_x), static_cast<float>(mouse_y))) {
+                    if (i == 0) {
+                        state = 4;
+                        return;
+                    }
+                    else if (i == 1) {
+                       
+                    }
+                    else if (i == 2) {
+                        state = 6;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void SubMenu::run() {
+
+    menuName.setCharacterSize(50);
+    menuName.setFont(font);
+    menuName.setFillColor(Color::White);
+    menuName.setString("Menu");
+    menuName.setPosition(550, 200);
+
+    for (int i = 0; i < numOptions; i++) {
+
+        buttons[i].setSize(Vector2f(350.0f, 50.0f));
+        buttons[i].setPosition(450, 300 + i * 56);
+        buttons[i].setFillColor(Color::Transparent);
+        buttons[i].setOutlineThickness(2);
+        buttons[i].setOutlineColor(Color::White);
+        buttons[i].setOrigin(0, 0);
+
+        text[i].setFont(font);
+        text[i].setString(optionNames[i]);
+        text[i].setCharacterSize(24);
+        text[i].setFillColor(Color::Black);
+        text[i].setPosition(525, 305 + i * 56);
+    }
+}
+void SubMenu::render(RenderWindow& window) {
+
+    // BackGround 
+    window.draw(backGroundSprite);
+    window.draw(menuName);
+
+    for (int i = 0; i < numOptions; i++) {
+        int mouseX = Mouse::getPosition(window).x;
+        int mouseY = Mouse::getPosition(window).y;
+
+        if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouseX), static_cast<float>(mouseY))) {
+            // Hover effect here
+            buttons[i].setFillColor(sf::Color(100, 100, 100)); // grey box
+            text[i].setFillColor(sf::Color::Yellow);
+        }
+        else {
+            buttons[i].setFillColor(Color::Transparent);   // transparent background
+            text[i].setFillColor(Color::White);           // default font color
+        }
+    }
+
+    for (int i = 0; i < numOptions; i++) {
+        window.draw(buttons[i]);
+        window.draw(text[i]);
+    }
+
+}
+// Friends
+void Friends::handleEvents(Event& event) {
+    if (event.type == Event::MouseButtonPressed) {
+        if (event.mouseButton.button == Mouse::Left) {
+            int mouse_x = event.mouseButton.x;
+            int mouse_y = event.mouseButton.y;
+            for (int i = 0; i < numOptions; i++) {
+                if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouse_x), static_cast<float>(mouse_y))) {
+                    if (i == 0) {
+                        cout << players->getNumFriends() << endl;
+                        for (int i = 0;i < players->getNumFriends();i++) {
+                            players->displayFriends();
+                        }
+                    }
+                    else if (i == 1) {
+
+                    }
+                    else if (i == 2) {
+
+                    }
+                }
+            }
+        }
+    }
+}
+void Friends::run() {
+
+    menuName.setCharacterSize(50);
+    menuName.setFont(font);
+    menuName.setFillColor(Color::White);
+    menuName.setString("Menu");
+    menuName.setPosition(550, 200);
+
+    for (int i = 0; i < numOptions; i++) {
+
+        buttons[i].setSize(Vector2f(350.0f, 50.0f));
+        buttons[i].setPosition(450, 300 + i * 56);
+        buttons[i].setFillColor(Color::Transparent);
+        buttons[i].setOutlineThickness(2);
+        buttons[i].setOutlineColor(Color::White);
+        buttons[i].setOrigin(0, 0);
+
+        text[i].setFont(font);
+        text[i].setString(optionNames[i]);
+        text[i].setCharacterSize(24);
+        text[i].setFillColor(Color::Black);
+        text[i].setPosition(525, 305 + i * 56);
+    }
+}
+void Friends::render(RenderWindow& window) {
+    window.draw(backGroundSprite);
+    window.draw(menuName);
+
+    for (int i = 0; i < numOptions; i++) {
+        int mouseX = Mouse::getPosition(window).x;
+        int mouseY = Mouse::getPosition(window).y;
+
+        if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouseX), static_cast<float>(mouseY))) {
+            // Hover effect here
+            buttons[i].setFillColor(sf::Color(100, 100, 100)); // grey box
+            text[i].setFillColor(sf::Color::Yellow);
+        }
+        else {
+            buttons[i].setFillColor(Color::Transparent);   // transparent background
+            text[i].setFillColor(Color::White);           // default font color
+        }
+    }
+
+    for (int i = 0; i < numOptions; i++) {
+        window.draw(buttons[i]);
+        window.draw(text[i]);
+    }
+}
+// Leader Board
+void LeaderBoard::handleEvents(Event& event) {
+    if (event.type == Event::MouseButtonPressed) {
+        if (event.mouseButton.button == Mouse::Left) {
+            int mouse_x = event.mouseButton.x;
+            int mouse_y = event.mouseButton.y;
+            for (int i = 0; i < numOptions; i++) {
+                if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouse_x), static_cast<float>(mouse_y))) {
+                    if (i == 0) {
+
+                    }
+                    else if (i == 1) {
+
+                    }
+                    else if (i == 2) {
+
+                    }
+                }
+            }
+        }
+    }
+}
+void LeaderBoard::run() {
+    sorting();
+    menuName.setCharacterSize(50);
+    menuName.setFont(font);
+    menuName.setFillColor(Color::White);
+    menuName.setString("LeaderBoard");
+    menuName.setPosition(550, 200);
+
+    for (int i = 0; i < numOptions; i++) {
+
+        buttons[i].setSize(Vector2f(350.0f, 50.0f));
+        buttons[i].setPosition(450, 290 + i * 46);
+        buttons[i].setFillColor(Color::Transparent);
+        buttons[i].setOutlineThickness(2);
+        buttons[i].setOutlineColor(Color::White);
+        buttons[i].setOrigin(0, 0);
+
+        text[i].setFont(font);
+        text[i].setString(topPlayers[i]);
+        //cout << topPlayers[i] << endl;
+        text[i].setCharacterSize(24);
+        text[i].setFillColor(Color::Black);
+        text[i].setPosition(460, 295 + i * 46);
+    }
+}
+void LeaderBoard::render(RenderWindow& window) {
+    window.draw(backGroundSprite);
+    window.draw(menuName);
+
+    for (int i = 0; i < numOptions; i++) {
+        int mouseX = Mouse::getPosition(window).x;
+        int mouseY = Mouse::getPosition(window).y;
+
+        if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouseX), static_cast<float>(mouseY))) {
+            // Hover effect here
+            buttons[i].setFillColor(sf::Color(100, 100, 100)); // grey box
+            text[i].setFillColor(sf::Color::Yellow);
+        }
+        else {
+            buttons[i].setFillColor(Color::Transparent);   // transparent background
+            text[i].setFillColor(Color::White);           // default font color
+        }
+    }
+
+    for (int i = 0; i < numOptions; i++) {
+        window.draw(buttons[i]);
+        window.draw(text[i]);
+    }
 }
 // Authentication
 bool Authentication::signUp(string user, string pass) {
@@ -369,7 +636,7 @@ bool Authentication::signUp(string user, string pass) {
             profile->getPlayer2() = profile->CheckUsername(user);
         }
     }
-    profile->display();
+    //profile->display();
     profile->WritePlayers();
     /*ofstream outFile("username.txt", ios::app);
     outFile << user << endl;
@@ -451,7 +718,7 @@ void Authentication::handleEvents(Event& event) {
                             numTimes -= 1;
                         }
                         else {
-                            state = 4;
+                            state = 5;
                         }
 
                     }
@@ -506,7 +773,7 @@ void Authentication::handleEvents(Event& event) {
                             numTimes -= 1;
                         }
                         else {
-                            state = 4;
+                            state = 5;
                         }
                     }
                 }
@@ -644,7 +911,199 @@ void SingularMode::handleEvents(Event& event) {
     }
 
 }
+// Theme
+void Inventory::handleEvents(Event& event) {
 
+    if (event.type == Event::MouseButtonPressed) {
+        if (event.mouseButton.button == Mouse::Left) {
+            if (substate == 0) {
+                int mouse_x = event.mouseButton.x;
+                int mouse_y = event.mouseButton.y;
+                for (int i = 0; i < numOptions; i++) {
+                    if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouse_x), static_cast<float>(mouse_y))) {
+                        if (i == 0) {
+                            substate = 1;
+                            return;
+                        }
+                        else if (i == 1) {
+                            substate = 2;
+                        }
+                        else if (i == 2) {
+                            substate = 3;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (event.type == Event::KeyPressed) {
+        if (substate == 1) {
+            if (event.key.code == sf::Keyboard::Num0) {
+                profile->addTheme("Blue Enchantment");
+            }
+            else if (event.key.code == sf::Keyboard::Num1) {
+                profile->addTheme("Purple Universe");
+            }
+            else if (event.key.code == sf::Keyboard::Num2) {
+                profile->addTheme("Green's Paradise");
+            }
+            else if (event.key.code == sf::Keyboard::Num3) {
+                profile->addTheme("Crimson Depths");
+            }
+            else if (event.key.code == sf::Keyboard::Num4) {
+                profile->addTheme("Neon Mirage");
+            }
+            else if (event.key.code == sf::Keyboard::Num5) {
+                profile->addTheme("Frozen Circuit");
+            }
+            else if (event.key.code == sf::Keyboard::Num6) {
+                profile->addTheme("Tropical Pulse");
+            }
+            else if (event.key.code == sf::Keyboard::Num7) {
+                profile->addTheme("Galactic Bloom");
+            }
+            else if (event.key.code == sf::Keyboard::Num8) {
+                profile->addTheme("Cyber Grove");
+            }
+            else if (event.key.code == sf::Keyboard::Num9) {
+                profile->addTheme("Solar Storm");
+            }
+            profile->WritePlayers();
+            profile->display();
+            state = 3;
+        }
+       
+    }
+    if (substate == 2) {
+        // Handle Enter key
+        if (event.type == sf::Event::KeyPressed ) {
+            if (event.key.code == sf::Keyboard::Enter) {
+                selected = avl.getThemeNameByID(stoi(number));
+                if (selected == "Theme not found") {
+                    cout << "Theme not found" << endl;
+                    init.setFont(font);
+                    init.setCharacterSize(30);
+                    init.setPosition(80, 300);
+                    init.setFillColor(Color::White);
+                    init.setString(selected);
+                }
+                else {
+                    profile->addTheme(selected);
+                    state = 3;
+                }
+            }
+            if (event.key.code == sf::Keyboard::BackSpace) {
+                if (number.empty()) {
+                    number.pop_back();
+                }
+            }
+            
+        }
+
+        // Handle character input
+        else if (event.type == sf::Event::TextEntered) {
+            char enteredChar = static_cast<char>(event.text.unicode);
+            if (std::isdigit(enteredChar)) {
+                number += enteredChar;
+            }
+        }
+    }
+
+}
+void Inventory::run() {
+    themeName.setCharacterSize(50);
+    themeName.setFont(font);
+    themeName.setFillColor(Color::White);
+    themeName.setString("Theme");
+    themeName.setPosition(550, 200);
+
+    if (substate == 0) {
+       
+
+        for (int i = 0; i < numOptions; i++) {
+
+            buttons[i].setSize(Vector2f(350.0f, 50.0f));
+            buttons[i].setPosition(450, 300 + i * 56);
+            buttons[i].setFillColor(Color::Transparent);
+            buttons[i].setOutlineThickness(2);
+            buttons[i].setOutlineColor(Color::White);
+            buttons[i].setOrigin(0, 0);
+
+            text[i].setFont(font);
+            text[i].setString(optionNames[i]);
+            text[i].setCharacterSize(24);
+            text[i].setFillColor(Color::Black);
+            text[i].setPosition(525, 305 + i * 56);
+        }
+    }
+    
+    
+}
+void Inventory::render(RenderWindow& window) {
+
+    // BackGround s
+    
+    if (substate == 0) {
+        window.draw(backGroundSprite);
+        window.draw(themeName);
+
+
+        for (int i = 0; i < numOptions; i++) {
+            int mouseX = Mouse::getPosition(window).x;
+            int mouseY = Mouse::getPosition(window).y;
+
+            if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouseX), static_cast<float>(mouseY))) {
+                // Hover effect here
+                buttons[i].setFillColor(sf::Color(100, 100, 100)); // grey box
+                text[i].setFillColor(sf::Color::Yellow);
+            }
+            else {
+                buttons[i].setFillColor(Color::Transparent);   // transparent background
+                text[i].setFillColor(Color::White);           // default font color
+            }
+        }
+
+        for (int i = 0; i < numOptions; i++) {
+            window.draw(buttons[i]);
+            window.draw(text[i]);
+        }
+    }
+    else if (substate == 1) {
+        Sprite themeBackground;
+        Texture themeText;
+        themeText.loadFromFile("images/Themes.png");
+        themeBackground.setTexture(themeText);
+        window.draw(themeBackground);
+        avl.displayThemes(window, font);
+        Text enter;
+        enter.setFont(font);
+        enter.setCharacterSize(30);
+        enter.setPosition(100, 700);
+        enter.setFillColor(Color::White);
+        enter.setString("Press keys 1-9 to select theme.....");
+        window.draw(enter);
+    }
+    else if (substate == 2) {
+        Sprite themeBackground;
+        Texture themeText;
+        themeText.loadFromFile("images/Themes.png");
+        themeBackground.setTexture(themeText);
+        window.draw(themeBackground);
+        Text enter;
+        enter.setFont(font);
+        enter.setCharacterSize(30);
+        enter.setPosition(80, 200);
+        enter.setFillColor(Color::White);
+        enter.setString("Enter ID:  ");
+        window.draw(enter);
+        enter.setString(number);
+        enter.setPosition(230, 200);
+        window.draw(enter);
+        window.draw(init);
+    }
+    
+
+}
 void SingularMode::run() {
   
     if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
@@ -671,22 +1130,20 @@ void SingularMode::run() {
         x += dx;
         y += dy;
         
-
         if (x < 0) x = 0; if (x > N - 1) x = N - 1;
         if (y < 0) y = 0; if (y > M - 1) y = M - 1;
 
         if (grid[y][x] == 2) Game = false; // hit own trail
         if (grid[y][x] == 0) {
-           
             grid[y][x] = 2; // trail creation
         }
         timer = 0;
     }
 
-    for (int i = 0;i < enemyCount;i++) {
-        a[i].move();
-       
-    }
+    for (int i = 0;i < enemyCount;i++) a[i].move();
+
+   
+
     if (grid[y][x] == 1) {
         dx = dy = 0;
 
@@ -725,11 +1182,6 @@ void SingularMode::run() {
                 }
             }
         }
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j < N; j++) {
-                if (grid[i][j] == 6) grid[i][j] = 2; // Restore trails
-            }
-        }
         if (occurence > 3) {
             threshold = 5;
         }
@@ -742,15 +1194,18 @@ void SingularMode::run() {
             cout << occurence << endl;
             
         }
-       ;
         score += captured;
-        cout << score << endl;
+        
        
     }
-
-
-    for (int i = 0;i < enemyCount;i++)
-        if (grid[a[i].y / ts][a[i].x / ts] == 2) Game = false;
+    for (int i = 0;i < enemyCount;i++) {
+        if (grid[a[i].y / ts][a[i].x / ts] == 2) {
+            Game = false;
+            return;
+        }
+    }
+  
+    
 }
 
 void SingularMode::FloodFill(int i, int j) {
@@ -765,20 +1220,78 @@ void SingularMode::FloodFill(int i, int j) {
 }
 void SingularMode::render(RenderWindow& window) {
     window.clear();
+    string theme = profile->getTheme();
 
+    // Apply theming using IntRects (changing appearance by selecting texture sub-region)
+    if (theme == "Blue Enchantment") {
+        sTrail.setTextureRect(IntRect(120, 0, ts, ts));
+        sWall.setTextureRect(IntRect(180, 0, ts, ts));
+        sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
+    }
+    else if (theme == "Purple Universe") {
+        sTrail.setTextureRect(IntRect(60, 0, ts, ts));
+        sWall.setTextureRect(IntRect(210, 0, ts, ts));
+        sPlayer.setTextureRect(IntRect(120, 0, ts, ts));
+    }
+    else if (theme == "Green's Paradise") {
+        sTrail.setTextureRect(IntRect(30, 0, ts, ts));
+        sWall.setTextureRect(IntRect(60, 0, ts, ts));
+        sPlayer.setTextureRect(IntRect(150, 0, ts, ts));
+    }
+    else if (theme == "Crimson Depths") {
+        sTrail.setTextureRect(IntRect(180, 0, ts, ts));
+        sWall.setTextureRect(IntRect(120, 0, ts, ts));
+        sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
+    }
+    else if (theme == "Neon Mirage") {
+        sTrail.setTextureRect(IntRect(60, 0, ts, ts));
+        sWall.setTextureRect(IntRect(90, 0, ts, ts));
+        sPlayer.setTextureRect(IntRect(120, 0, ts, ts));
+    }
+    else if (theme == "Frozen Circuit") {
+        sTrail.setTextureRect(IntRect(30, 0, ts, ts));
+        sWall.setTextureRect(IntRect(210, 0, ts, ts));
+        sPlayer.setTextureRect(IntRect(150, 0, ts, ts));
+    }
+    else if (theme == "Tropical Pulse") {
+        sTrail.setTextureRect(IntRect(0, 0, ts, ts));
+        sWall.setTextureRect(IntRect(150, 0, ts, ts));
+        sPlayer.setTextureRect(IntRect(180, 0, ts, ts));
+    }
+    else if (theme == "Galactic Bloom") {
+        sTrail.setTextureRect(IntRect(180, 0, ts, ts));
+        sWall.setTextureRect(IntRect(120, 0, ts, ts));
+        sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
+    }
+    else if (theme == "Cyber Grove") {
+        sTrail.setTextureRect(IntRect(30, 0, ts, ts));
+        sWall.setTextureRect(IntRect(90, 0, ts, ts));
+        sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
+    }
+    else if (theme == "Solar Storm") {
+        sTrail.setTextureRect(IntRect(120, 0, ts, ts));
+        sWall.setTextureRect(IntRect(30, 0, ts, ts));
+        sPlayer.setTextureRect(IntRect(90, 0, ts, ts));
+    }
     for (int i = 0;i < M;i++)
         for (int j = 0;j < N;j++)
         {
-            if (grid[i][j] == 0) continue;
-            if (grid[i][j] == 1) sTile.setTextureRect(IntRect(0, 0, ts, ts));
-            if (grid[i][j] == 2) sTile.setTextureRect(IntRect(90, 0, ts, ts));
-            sTile.setPosition(j * ts, i * ts);
-            window.draw(sTile);
+            if (grid[i][j] == 0) {
+                continue;
+            }
+            if (grid[i][j] == 1) {
+                sWall.setPosition(j * ts, i * ts);
+                window.draw(sWall);
+            }
+            if (grid[i][j] == 2) {
+                sTrail.setPosition(j * ts, i * ts);
+                window.draw(sTrail);
+            }
         }
 
-    sTile.setTextureRect(IntRect(60, 0, ts, ts));
-    sTile.setPosition(x * ts, y * ts);
-    window.draw(sTile);
+    
+    sPlayer.setPosition(x * ts, y * ts);
+    window.draw(sPlayer);
 
     sEnemy.rotate(20);
     for (int i = 0;i < enemyCount;i++)
@@ -807,23 +1320,19 @@ void MultiPlayerMode::run() {
 
     // 0 = empty space, 1 = boundary (blue) , 2 = player 1 captured tiles, 3 = player 1 trail (red) , 4 = player 2 captured tiles (green) , 5 = player 2 trail (golden)
 
-    if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
-    if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;dy = 0; };
-    if (Keyboard::isKeyPressed(Keyboard::Up)) { dx = 0;dy = -1; };
-    if (Keyboard::isKeyPressed(Keyboard::Down)) { dx = 0;dy = 1; };
+    if (Keyboard::isKeyPressed(Keyboard::A)) { dx = -1;dy = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::D)) { dx = 1;dy = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::W)) { dx = 0;dy = -1; };
+    if (Keyboard::isKeyPressed(Keyboard::S)) { dx = 0;dy = 1; };
 
-    if (Keyboard::isKeyPressed(Keyboard::A)) { dx2 = -1;dy2 = 0; };
-    if (Keyboard::isKeyPressed(Keyboard::D)) { dx2 = 1;dy2 = 0; };
-    if (Keyboard::isKeyPressed(Keyboard::S)) { dx2 = 0;dy2 = 1; };
-    if (Keyboard::isKeyPressed(Keyboard::W)) { dx2 = 0;dy2 = -1; };
+    if (Keyboard::isKeyPressed(Keyboard::Left)) { dx2 = -1;dy2 = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::Right)) { dx2 = 1;dy2 = 0; };
+    if (Keyboard::isKeyPressed(Keyboard::Down)) { dx2 = 0;dy2 = 1; };
+    if (Keyboard::isKeyPressed(Keyboard::Up)) { dx2 = 0;dy2 = -1; };
 
     float time = clock.getElapsedTime().asSeconds();
     clock.restart();
     timer += time;
-
-    if (!Game) {
-        return;
-    }
     if (Keyboard::isKeyPressed(Keyboard::Enter)) {
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
@@ -833,68 +1342,124 @@ void MultiPlayerMode::run() {
         }
         cout << endl;
     }
+    if (isPlayer1Dead && isPlayer2Dead) {
+        Game = false;
+        state = 8;
+    }
+    if (isPlayer1Dead) {
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                if (grid[i][j] == 3) {
+                    grid[i][j] = 0;
+                }
+            }
+        }
+    }
+    if (isPlayer2Dead) {
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                if (grid[i][j] == 5) {
+                    grid[i][j] = 0;
+                }
+            }
+        }
+    }
+    if (!Game) {
+        cout << prevState << endl;
+        if (prevState == 8) {
+            state = 8;
+            return;
+        }
+        else if(prevState==-1) {
+            state = 2;
+            
+            return; 
+        }
+        
+    }
+    if (x == x2 && y == y2 && (grid[y][x] == 3 || grid[y][x] == 5 || grid[y][x] == 0)) {
+        cout << "Both players collided" << endl;
+        cout << grid[y][x] << endl;
+        Game = false;
+    }
 
     if (timer > delay)
     {
+      
 
         x += dx;
         y += dy;
 
         x2 += dx2;
         y2 += dy2;
-
+        if (x == x2 && y == y2 && grid[y][x] == 0) {
+            cout << "Both players collided" << endl;
+            cout << grid[y][x] << endl;
+            Game = false;
+        }
+       
         if (x < 0) x = 0; if (x > N - 1) x = N - 1;
-        if (y < 0) y = 0; if (y > M - 1) y = M - 1;
+        if (y < 1) y = 1; if (y > M - 1) y = M - 1;
         if (x2 < 0) x2 = 0; if (x2 > N - 1) x2 = N - 1;
-        if (y2 < 0) y2 = 0; if (y2 > M - 1) y2 = M - 1;
-
+        if (y2 < 1) y2 = 1; if (y2 > M - 1) y2 = M - 1;
+        
         if (grid[y][x] == 3) Game = false; // hit own trail
-        if (grid[y2][x2] == 5) Game = false;
-        if (grid[y][x] == 0) grid[y][x] = 3; // trail creation for player 1
-        if (grid[y2][x2] == 0) grid[y2][x2] = 5; // trail creation for player 2
+        if (grid[y2][x2] == 5) Game = false; // hit own trail
+        if (grid[y][x] == 5) {
+            isPlayer1Dead = true;
+           
+        } // Player 1 hits player 2's trail
+        if (grid[y2][x2] == 3) {
+            isPlayer2Dead = true;
+            
+        }
+        // Player 2 hits player 1's trail
+        if (!isPlayer1Dead) {
+            if (grid[y][x] == 0) grid[y][x] = 3; // trail creation for player 1
+        }
+        if (!isPlayer2Dead) {
+            if (grid[y2][x2] == 0) grid[y2][x2] = 5; // trail creation for player 2
+        }
         timer = 0;
-
     }
-
+   
+   
     for (int i = 0;i < enemyCount;i++) a[i].move();
 
     //// Player 1
-    if (grid[y][x] == 1 || grid[y][x] == 2 || grid[y][x] == 4)
+    if ((grid[y][x] == 1 || grid[y][x] == 2 || grid[y][x] == 4) && !isPlayer1Dead && grid[y2][x2] != 0)
     {
         dx = dy = 0;
-
         for (int i = 0;i < enemyCount;i++)
             drop(a[i].y / ts, a[i].x / ts);
 
         for (int i = 0;i < M;i++) {
             for (int j = 0;j < N;j++) {
                 if (grid[i][j] == 0) {
-                    grid[i][j] = 4;
+                    grid[i][j] = 4;  // Player 1 captures empty spaces as 4
                 }
                 else if (grid[i][j] == 3) {
-                    grid[i][j] = 2;
+                    grid[i][j] = 2;  // Player 1's trail becomes Player 1's captured
                 }
                 else if (grid[i][j] == -1) {
                     grid[i][j] = 0;
                 }
             }
         }
-
     }
+    
     //// Player 2
-    if (grid[y2][x2] == 1 || grid[y2][x2] == 4 || grid[y2][x2] == 2) {
+    if ((grid[y2][x2] == 1 || grid[y2][x2] == 4 || grid[y2][x2] == 2) && !isPlayer2Dead && grid[y][x] != 0) {
         dx2 = dy2 = 0;
         for (int i = 0;i < enemyCount;i++)
             drop(a[i].y / ts, a[i].x / ts);
-
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 if (grid[i][j] == 0) {
-                    // cout << "Player 2 claiming (" << i << "," << j << ") which was: " << grid[i][j] << endl;
-                    grid[i][j] = 2;
+                    grid[i][j] = 2;  // Player 2 captures empty spaces as 2
                 }
                 else if (grid[i][j] == 5) {
-                    grid[i][j] = 4;
+                    grid[i][j] = 4;  // Player 2's trail becomes Player 2's captured
                 }
                 else if (grid[i][j] == -1) {
                     grid[i][j] = 0;
@@ -902,16 +1467,22 @@ void MultiPlayerMode::run() {
             }
         }
     }
-
-    for (int i = 0;i < enemyCount;i++)
-        if (grid[a[i].y / ts][a[i].x / ts] == 3 || grid[a[i].y / ts][a[i].x / ts] == 5) Game = false;
+    
+    for (int i = 0;i < enemyCount;i++) {
+        if (grid[a[i].y / ts][a[i].x / ts] == 5) {
+            isPlayer2Dead = true;
+        }
+        if (grid[a[i].y / ts][a[i].x / ts] == 3) {
+            isPlayer1Dead = true;
+        }
+    }
+        
 }
 void MultiPlayerMode::render(RenderWindow& window) {
     window.clear();
-
     // 0 = empty space, 1 = boundary (blue) , 2 = player 1 captured tiles, 3 = player 1 trail (red) , 4 = player 2 captured tiles (green) , 5 = player 2 trail (golden)
-    for (int i = 0;i < M;i++)
-        for (int j = 0;j < N;j++)
+    for (int i = 1; i < M; i++)
+        for (int j = 0; j < N; j++)
         {
             if (grid[i][j] == 0) {
                 continue;
@@ -941,24 +1512,81 @@ void MultiPlayerMode::render(RenderWindow& window) {
                 sPlayer2.setPosition(j * ts, i * ts);
                 window.draw(sPlayer2);
             }
-
         }
+    if (!isPlayer1Dead) {
+        sPlayer1.setTextureRect(IntRect(150, 0, ts, ts));
+        sPlayer1.setPosition(x * ts, y * ts);
+        window.draw(sPlayer1);
+    }
 
-    sPlayer1.setTextureRect(IntRect(150, 0, ts, ts));
-    sPlayer1.setPosition(x * ts, y * ts);
-    window.draw(sPlayer1);
+    if (!isPlayer2Dead) {
+        sPlayer2.setTextureRect(IntRect(180, 0, ts, ts));
+        sPlayer2.setPosition(x2 * ts, y2 * ts);
+        window.draw(sPlayer2);
+    }
 
-    sPlayer2.setTextureRect(IntRect(180, 0, ts, ts));
-    sPlayer2.setPosition(x2 * ts, y2 * ts);
-    window.draw(sPlayer2);
+    // Player 1 score section
+    score.setFillColor(Color::Red);
+    score.setPosition(5, 3);
+    score.setCharacterSize(24);
+    score.setString("Player 1: ");
+    window.draw(score);
+
+    // Player 1 name with "Dead" indicator if applicable
+    score.setPosition(120, 3);
+    score.setString(profile->getPlayerName(1));
+    window.draw(score);
+
+    // If player is dead, show the indicator
+    if (isPlayer1Dead) {
+        Text deadText;
+        deadText.setFont(*score.getFont());
+        deadText.setFillColor(Color::Red);
+        deadText.setCharacterSize(24);
+        deadText.setString(" (Dead)");
+        deadText.setPosition(310,3);
+        window.draw(deadText);
+    }
+
+    // Player 1 score
+    score.setPosition(250, 3);
+    score.setString(to_string(profile->getScore(1)));
+    window.draw(score);
+
+    // Player 2 score section
+    score.setFillColor(Color::Green);
+    score.setPosition(600, 3);
+    score.setCharacterSize(24);
+    score.setString("Player 2: ");
+    window.draw(score);
+
+    // Player 2 name
+    score.setPosition(720, 3);
+    score.setString(profile->getPlayerName(2));
+    window.draw(score);
+
+    // If player is dead, show the indicator
+    if (isPlayer2Dead) {
+        Text deadText;
+        deadText.setFont(*score.getFont());
+        deadText.setFillColor(Color::Red);
+        deadText.setCharacterSize(24);
+        deadText.setString(" (Dead)");
+        deadText.setPosition(900, 3);
+        window.draw(deadText);
+    }
+
+    // Player 2 score
+    score.setPosition(820, 3);
+    score.setString(to_string(profile->getScore(2)));
+    window.draw(score);
 
     sEnemy.rotate(20);
-    for (int i = 0;i < enemyCount;i++)
+    for (int i = 0; i < enemyCount; i++)
     {
         sEnemy.setPosition(a[i].x, a[i].y);
         window.draw(sEnemy);
     }
-
     if (!Game) window.draw(sGameover);
 }
 // Main Loop
@@ -994,10 +1622,11 @@ int main()
     window.setFramerateLimit(60);
     PlayerProfile* players = new PlayerProfile;
     players->ReadPlayers();
-   /* players->display();*/
+    players->display();
     Game game(window, players);
     game.start();
 
 
     return 0;
 }
+bool MatchMaking::matchShown=false;

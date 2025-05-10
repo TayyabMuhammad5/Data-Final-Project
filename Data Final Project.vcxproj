@@ -19,7 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AVLTree.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="Matching.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
