@@ -3,20 +3,21 @@
 #pragma once
 #include<iostream>
 #include<fstream>
+#include<cstdlib>
+#include<ctime>
 #include <SFML/Graphics.hpp>
 #include "AVLTree.h"
-
 
 using namespace std;
 using namespace sf;
 const int M = 25;
 const int N = 40;
 bool isSleep = 0;
-int state = 1; // 1 = title, 2 = menu, 3 = subMenu, 4 = Singular Mode, 5 = Multiplayer Mode, 6 = Theme, 7 == LeaderBoard
-int prevState=-1;
+int state = 1; // 1 = title, 2 = menu, 3 = subMenu, 4 = Singular Mode, 5 = Multiplayer Mode, 6 = Theme, 7 == LeaderBoard, 8 = End Menu
 int grid[M][N] = { 0 };
 int ts = 30; //tile size
-
+bool isLoaded = false;
+int prevState = -1;
 
 struct Player {
     string name = "";
@@ -43,6 +44,143 @@ struct Player {
         matchHistory = tmp.matchHistory;
     }
 };
+
+
+struct GameElements {
+    int x;
+    int y;
+    int val;
+    GameElements* next;
+
+    GameElements(int x, int y, int val) : x(x), y(y), val(val), next(nullptr) {}
+};
+
+class Save {
+private:
+    string name;
+    string TimeStamp;
+    int score;
+    GameElements* root;
+
+    string intToStr(int num) {
+        string res;
+        if (num == 0) return "0";
+        while (num > 0) {
+            res = char('0' + (num % 10)) + res;
+            num /= 10;
+        }
+        return res;
+    }
+
+    string pad2(int num) {
+        string s = intToStr(num);
+        return (s.length() < 2 ? "0" + s : s);
+    }
+
+    string getCurrentTimestamp() {
+        time_t now = time(nullptr);
+        tm t;
+        localtime_s(&t, &now);
+
+
+        return intToStr(1900 + t.tm_year) + "-" + pad2(1 + t.tm_mon) + "-" + pad2(t.tm_mday) +
+            " " + pad2(t.tm_hour) + ":" + pad2(t.tm_min) + ":" + pad2(t.tm_sec);
+
+    }
+
+public:
+    Save() {
+        name = "";
+        TimeStamp = "";
+        root = nullptr;
+        score = 0;
+    }
+
+    Save(string n,int s) {
+        score = s;
+        name = n;
+        TimeStamp = getCurrentTimestamp();
+        root = nullptr;
+    }
+
+    void addElement(int x, int y, int val) {
+        GameElements* newNode = new GameElements(x, y, val);
+        newNode->next = root;
+        root = newNode;
+    }
+    void convertToGrid() {
+        GameElements* tmp = root;
+        int i = 0;
+        while (i < M) {
+            int j = 0;
+            while (j < N) {
+                grid[tmp->y][tmp->x] = tmp->val;
+                cout << tmp->val << " ";
+                j++;
+                tmp = tmp->next;
+            }
+            cout << endl;
+            i++;
+        }
+    }
+    void serialize(const string& filename) {
+        ofstream out(filename.c_str());
+        out << name << endl;
+        out << score << endl;
+        out << TimeStamp << endl;
+        
+        GameElements* current = root;
+        while (current) {
+            out << current->x << " " << current->y << " " << current->val << endl;
+            current = current->next;
+        }
+        out.close();
+    }
+
+    void deserialize(const string& filename) {
+        ifstream in(filename.c_str());
+        if (!in) return;
+        string px;
+        getline(in, name);
+        getline(in, TimeStamp);
+        getline(in, px);
+        score = stoi(px);
+        root = nullptr;
+        int x, y, val;
+        while (in >> x >> y >> val) {
+            grid[x][y] = val;
+            addElement(x, y, val);
+        }
+        in.close();
+    }
+    string sanitize(const string& s) {
+        string result;
+        for (char c : s) {
+            if ((c >= 'a' && c <= 'z') ||
+                (c >= 'A' && c <= 'Z') ||
+                (c >= '0' && c <= '9')) {
+                result += c;
+            }
+        }
+        return result;
+    }
+
+    string getSaveID() {
+        // Combine name and sanitized timestamp
+        return sanitize(name)  + sanitize(TimeStamp);
+    }
+
+    void printSave() {
+        cout << "Name: " << name << endl;
+        cout << "Time: " << TimeStamp << endl;
+        GameElements* current = root;
+        while (current) {
+            cout << "(" << current->x << ", " << current->y << ") = " << current->val << endl;
+            current = current->next;
+        }
+    }
+};
+
 
 class PlayerProfile {
 private:
@@ -90,6 +228,9 @@ public:
             players[currentPlayer2].TotalScore += pt;
         }
     }
+    void setScore(int num) {
+        players[currentPlayer1].score = num;
+    }
     int getNumFriends() {
         if (currentPlayer1 != -1)
             return players[currentPlayer1].numfriends;
@@ -121,7 +262,9 @@ public:
             WritePlayers();  
         }
     }
-
+   /* void setScore(int num) {
+        players[currentPlayer1].score = num;
+    }*/
     int& getPlayer2() {
         return currentPlayer2;
     }
@@ -149,7 +292,9 @@ struct singEnemy
 
     singEnemy()
     {
-        x = y = 300;
+        //x = y = 300;
+        x = 600;
+        y = 360;
         dx = 4 - rand() % 8;
         dy = 4 - rand() % 8;
     }
@@ -269,7 +414,8 @@ public:
 
 class SubMenu : public State {
 private:
-    //int subState;
+    PlayerProfile* profile;
+    int subState;
     int numOptions;
     string* optionNames;
     RectangleShape* buttons;
@@ -278,10 +424,45 @@ private:
     Texture backGroundTexture;
     Sprite backGroundSprite;
     Text menuName;
+    string number;
+    bool isNotfound = false;
+    bool otherPlayer = false;
 public:
-    SubMenu() {
+    SubMenu(PlayerProfile* player):profile(player) {
+        int subState = 0;
         numOptions = 6;
         optionNames = new string[numOptions]{ "Start Game","Select Difficulty Level","Change Theme","Load Saved Game","Friends","Exit" };
+        buttons = new RectangleShape[numOptions];
+        text = new Text[numOptions];
+
+        if (!font.loadFromFile("images/arial.ttf")) {
+            std::cerr << "Could not load font.\n";
+        }
+        if (!backGroundTexture.loadFromFile("images/Menu.jpg")) {
+            cout << "Image was not loaded" << endl;
+        }
+        backGroundSprite.setTexture(backGroundTexture);
+    }
+    void handleEvents(Event& event) override;
+    void run() override;
+    void render(RenderWindow& window) override;
+};
+class EndMenu : public State {
+private:
+    PlayerProfile* profile;
+    int numOptions;
+    string* optionNames;
+    RectangleShape* buttons;
+    Text* text;
+    Font font;
+    Texture backGroundTexture;
+    Sprite backGroundSprite;
+    Text menuName;
+    bool isSaved = false;
+public:
+    EndMenu(PlayerProfile* player):profile(player) {
+        numOptions = 3;
+        optionNames = new string[numOptions]{ "Resume","Save","Exit"};
         buttons = new RectangleShape[numOptions];
         text = new Text[numOptions];
 
@@ -458,15 +639,20 @@ private:
     int enemyCount = 4;
     singEnemy a[10];
     bool Game;
-    int x = 0, y = 0, dx = 0, dy = 0;
+    int x = 0, y = 1, dx = 0, dy = 0;
     float timer, delay;
     Clock clock;
     int score = 0;
+    Font font;
     int occurence = 0, threshold = 10, multiple = 2;
     Sprite sTrail, sWall, sPlayer;
+
 public:
     SingularMode(PlayerProfile* player) : profile(player) {
-        
+        if (!font.loadFromFile("images/arial.ttf")) {
+            std::cerr << "Could not load font.\n";
+        }
+        score = profile->getScore(1);
         t1.loadFromFile("images/tiles_30.png");
         t1.loadFromFile("images/tiles_30.png");
         t2.loadFromFile("images/gameover.png");
@@ -485,9 +671,9 @@ public:
         for (int i = 0;i < N; i++) {
             grid[0][i] = -2;
         }
-        for (int i = 0;i < M;i++)
+        for (int i = 1;i < M;i++)
             for (int j = 0;j < N;j++)
-                if (i == 0 || j == 0 || i == M - 1 || j == N - 1)  grid[i][j] = 1;
+                if (i == 1 || j == 0 || i == M - 1 || j == N - 1)  grid[i][j] = 1;
     }
     void handleEvents(Event& event) override;
     void run() override;
@@ -607,7 +793,6 @@ private:
     int substate;
     RenderWindow& window;
     PlayerProfile* profile;
-
 public:
     StateManager(RenderWindow& render_window, PlayerProfile* player) :window(render_window) {
         profile = player;
