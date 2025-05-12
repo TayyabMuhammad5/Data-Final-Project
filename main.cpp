@@ -1585,31 +1585,47 @@ void MultiPlayerMode::run() {
         if (x2 < 0) x2 = 0; if (x2 > N - 1) x2 = N - 1;
         if (y2 < 1) y2 = 1; if (y2 > M - 1) y2 = M - 1;
         
-        if (grid[y][x] == 3) Game = false; // hit own trail
-        if (grid[y2][x2] == 5) Game = false; // hit own trail
-        if (grid[y][x] == 5) {
+        
+        if (grid[y][x] == 5 || grid[y][x] == 3) {
             isPlayer1Dead = true;
            
         } // Player 1 hits player 2's trail
-        if (grid[y2][x2] == 3) {
+        if (grid[y2][x2] == 3 || grid[y2][x2] == 5) {
             isPlayer2Dead = true;
             
         }
         // Player 2 hits player 1's trail
         if (!isPlayer1Dead) {
-            if (grid[y][x] == 0) grid[y][x] = 3; // trail creation for player 1
+            if (grid[y][x] == 0) {
+                grid[y][x] = 3;
+                isPlayer1moving = true;
+            }
+            // trail creation for player 1
+           
         }
         if (!isPlayer2Dead) {
-            if (grid[y2][x2] == 0) grid[y2][x2] = 5; // trail creation for player 2
+            if (grid[y2][x2] == 0) {
+                grid[y2][x2] = 5;
+                isPlayer2moving = true;
+            } // trail creation for player 2
+           
         }
         timer = 0;
     }
    
-   
+ 
     for (int i = 0;i < enemyCount;i++) a[i].move();
-
+    if (!isPlayer1moving) {
+        dx = 0;
+        dy = 0;
+    }
+    if (!isPlayer2moving) {
+        dx2 = 0;
+        dy2 = 0;
+    }
+   
     //// Player 1
-    if ((grid[y][x] == 1 || grid[y][x] == 2 || grid[y][x] == 4) && !isPlayer1Dead && grid[y2][x2] != 0)
+    if ((grid[y][x] == 1 || grid[y][x] == 2 || grid[y][x] == 4) && !isPlayer1Dead && isPlayer1moving && !isPlayer2moving)
     {
         dx = dy = 0;
         for (int i = 0;i < enemyCount;i++)
@@ -1618,38 +1634,125 @@ void MultiPlayerMode::run() {
         for (int i = 0;i < M;i++) {
             for (int j = 0;j < N;j++) {
                 if (grid[i][j] == 0) {
-                    grid[i][j] = 4;  // Player 1 captures empty spaces as 4
+                    grid[i][j] = 2;  // Player 1 captures empty spaces as 4
+                    captured1++;
                 }
                 else if (grid[i][j] == 3) {
                     grid[i][j] = 2;  // Player 1's trail becomes Player 1's captured
+                    captured1++;
                 }
                 else if (grid[i][j] == -1) {
                     grid[i][j] = 0;
                 }
             }
         }
+        isPlayer1moving = false;
+        
     }
     
     //// Player 2
-    if ((grid[y2][x2] == 1 || grid[y2][x2] == 4 || grid[y2][x2] == 2) && !isPlayer2Dead && grid[y][x] != 0) {
+    if ((grid[y2][x2] == 1 || grid[y2][x2] == 4 || grid[y2][x2] == 2) && !isPlayer2Dead && isPlayer2moving && !isPlayer1moving) {
         dx2 = dy2 = 0;
+
         for (int i = 0;i < enemyCount;i++)
             drop(a[i].y / ts, a[i].x / ts);
+
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 if (grid[i][j] == 0) {
-                    grid[i][j] = 2;  // Player 2 captures empty spaces as 2
+                    cout << "I am running " << endl;
+                    cout << isPlayer2moving << endl;
+                    //cout << "Captured using player 2" << endl;
+                    grid[i][j] = 4;  // Player 2 captures empty spaces as 2
+                    captured2++;
                 }
                 else if (grid[i][j] == 5) {
                     grid[i][j] = 4;  // Player 2's trail becomes Player 2's captured
+                    captured2++;
                 }
                 else if (grid[i][j] == -1) {
                     grid[i][j] = 0;
                 }
             }
         }
+        isPlayer2moving = false;
+    }
+
+    if ((grid[y][x] == 1 || grid[y][x] == 2 || grid[y][x] == 4) && !isPlayer1Dead && isPlayer1moving && isPlayer2moving)
+    {
+        dx = dy = 0;
+        for (int i = 0;i < enemyCount;i++)
+            drop(a[i].y / ts, a[i].x / ts);
+
+        for (int i = 0;i < M;i++) {
+            for (int j = 0;j < N;j++) {
+                if (grid[i][j] == 0) {
+                    grid[i][j] = 2;  // Player 1 captures empty spaces as 4
+                    captured1++;
+                }
+                else if (grid[i][j] == 3) {
+                    grid[i][j] = 2;  // Player 1's trail becomes Player 1's captured
+                    captured1++;
+                }
+                else if (grid[i][j] == -1) {
+                    grid[i][j] = 0;
+                }
+            }
+        }
+        isPlayer1moving = false;
+
+    }
+
+    if ((grid[y2][x2] == 1 || grid[y2][x2] == 4 || grid[y2][x2] == 2) && !isPlayer2Dead && isPlayer2moving && isPlayer1moving) {
+        dx2 = dy2 = 0;
+
+        for (int i = 0;i < enemyCount;i++)
+            drop(a[i].y / ts, a[i].x / ts);
+
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                if (grid[i][j] == 0) {
+                    grid[i][j] = 4;  // Player 2 captures empty spaces as 2
+                    captured2++;
+                }
+                else if (grid[i][j] == 5) {
+                    grid[i][j] = 4;  // Player 2's trail becomes Player 2's captured
+                    captured2++;
+                }
+                else if (grid[i][j] == -1) {
+                    grid[i][j] = 0;
+                }
+            }
+        }
+        isPlayer2moving = false;
     }
     
+    if (occurence1 > 3) {
+        threshold1 = 5;
+    }
+    else if (occurence1 > 5) {
+        multiple1 = 4;
+    }
+    if (captured1 > threshold1) {
+        captured1 *= multiple1;
+        occurence1++;
+    }
+    score1 += captured1;
+    captured1 = 0;
+
+    if (occurence2 > 3) {
+        threshold2 = 5;
+    }
+    else if (occurence2 > 5) {
+        multiple2 = 4;
+    }
+    if (captured2 > threshold2) {
+        captured2 *= multiple2;
+        occurence2++;
+    }
+    score2 += captured2;
+    captured2 = 0;
+   
     for (int i = 0;i < enemyCount;i++) {
         if (grid[a[i].y / ts][a[i].x / ts] == 5) {
             isPlayer2Dead = true;
@@ -1732,7 +1835,7 @@ void MultiPlayerMode::render(RenderWindow& window) {
 
     // Player 1 score
     score.setPosition(250, 3);
-    score.setString(to_string(profile->getScore(1)));
+    score.setString(to_string(score1));
     window.draw(score);
 
     // Player 2 score section
@@ -1760,7 +1863,7 @@ void MultiPlayerMode::render(RenderWindow& window) {
 
     // Player 2 score
     score.setPosition(820, 3);
-    score.setString(to_string(profile->getScore(2)));
+    score.setString(to_string(score2));
     window.draw(score);
 
     sEnemy.rotate(20);

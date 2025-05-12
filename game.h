@@ -560,16 +560,15 @@ private:
     char keyPressed_Player2;
     Clock clock;
     int score1 = 0;
-    int occurence1 = 0, threshold1 = 10, multiple1 = 2;
     int score2 = 0;
-    int occurence2 = 0, threshold2 = 10, multiple2 = 2;
     bool isPlayer1Dead = false, isPlayer2Dead = false;
     Text score;
-    int capturedTiles1 = 0;
-    int capturedTiles2 = 0;
-    int occurences1 = 0;
-    int occurences2 = 0;
-
+    int tempGrid[M][N] = { 0 };
+    static int count;
+    bool isPlayer1moving = false;
+    bool isPlayer2moving = false;
+    int occurence1 = 0, threshold1 = 10, multiple1 = 2,captured1 = 0,captured2 = 0;
+    int occurence2 = 0, threshold2 = 10, multiple2 = 2;
 public:
     MultiPlayerMode(PlayerProfile* player) : profile(player) {
         t1.loadFromFile("images/tiles_30.png");
@@ -680,6 +679,7 @@ public:
     Game(RenderWindow& render_window, PlayerProfile* player) :window(render_window), state_manager(render_window, player), profile(player) {};
     void start();
 };
+int MultiPlayerMode::count = 0;
 #endif
 
 

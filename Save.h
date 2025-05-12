@@ -104,7 +104,7 @@ public:
     }
 
     string getSaveID() {
-        // Combine name and sanitized timestamp
+       
         return sanitize(name) + sanitize(TimeStamp);
     }
 
