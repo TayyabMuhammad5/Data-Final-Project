@@ -21,13 +21,13 @@ null
 ---
 Tayyab
 12345678
-310
-4602
-21
+392
+5304
+23
 1530
 null
 null
-Tropical Pulse
+
 ---
 Ahmed
 12341234
