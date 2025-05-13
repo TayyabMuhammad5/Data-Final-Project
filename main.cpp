@@ -358,13 +358,13 @@ void Menu::handleEvents(Event& event) {
                         // isSecondAuthenticationOn = true;
                         auth.getNumTimes() = 2;
                     }
-                    else if (i == 5) {
+                    else if (i == 3) {
                         state = 7;
                     }
                     else if (i == 2) {
                         state = 9;
                     }
-                    else if (i == 6) {
+                    else if (i == 4) {
                         window.close();
                     }
                 }
@@ -448,18 +448,15 @@ void SubMenu::handleEvents(Event& event) {
                         return;
                     }
                     else if (i == 1) {
-                       
-                    }
-                    else if (i == 2) {
                         state = 6;
                     }
-                    else if (i == 3) {
+                    else if (i == 2) {
                         subState = 1;
                     }
-                    else if (i == 4) {
+                    else if (i == 3) {
                         state = 10;
                     }
-                    else if (i == 5) {
+                    else if (i == 4) {
                         state = 2;
                     }
                 }
@@ -468,6 +465,9 @@ void SubMenu::handleEvents(Event& event) {
     }
     if (subState == 1) {
         // Handle Enter key
+        if (Keyboard::isKeyPressed(Keyboard::Escape)) {
+            subState = 0;
+        }
         if (event.type == sf::Event::KeyPressed) {
             if (event.key.code == sf::Keyboard::Enter) {
                 string filename = number + ".txt";
@@ -1046,7 +1046,7 @@ bool Authentication::logIn(string user, string pass) {
     return false;
 }
 void Authentication::run() {
-
+    
 }
 void Authentication::handleEvents(Event& event) {
     if (event.type == Event::MouseButtonPressed &&
@@ -1066,7 +1066,7 @@ void Authentication::handleEvents(Event& event) {
         }
         cout << subState << endl;
     }
-
+   
     if (subState == 0 && event.type == sf::Event::TextEntered) {
         if (event.text.unicode < 128) {
             if (event.text.unicode == 8) {
@@ -1401,7 +1401,9 @@ void Inventory::run() {
     themeName.setPosition(550, 200);
 
     if (substate == 0) {
-       
+        if (Keyboard::isKeyPressed(Keyboard::Escape)) {
+            state = 3;
+        }
 
         for (int i = 0; i < numOptions; i++) {
 

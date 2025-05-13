@@ -319,8 +319,8 @@ private:
     bool isSecondAuthenticationOn;
 public:
     Menu(RenderWindow& render_window, PlayerProfile* player) :window(render_window), auth(render_window, profile), profile(player) {
-        numOptions = 7;
-        optionNames = new string[numOptions]{ "Singular Mode","Multiplayer Mode","Match Making","Change Theme","Set Difficulty Level","Leader Board","Exit" };
+        numOptions = 5;
+        optionNames = new string[numOptions]{ "Singular Mode","Multiplayer Mode","Match Making","Leader Board","Exit" };
         buttons = new RectangleShape[numOptions];
         text = new Text[numOptions];
 
@@ -357,8 +357,8 @@ private:
 public:
     SubMenu(PlayerProfile* player):profile(player) {
         int subState = 0;
-        numOptions = 6;
-        optionNames = new string[numOptions]{ "Start Game","Select Difficulty Level","Change Theme","Load Saved Game","Friends","Exit" };
+        numOptions = 5;
+        optionNames = new string[numOptions]{ "Start Game","Change Theme","Load Saved Game","Friends","Exit" };
         buttons = new RectangleShape[numOptions];
         text = new Text[numOptions];
 
