@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="AVLTree.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="HashMap.h" />
     <ClInclude Include="Matching.h" />
     <ClInclude Include="Save.h" />
   </ItemGroup>

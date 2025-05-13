@@ -7,7 +7,7 @@
 #include<ctime>
 #include <SFML/Graphics.hpp>
 #include "AVLTree.h"
-
+#include "HashMap.h"
 using namespace std;
 using namespace sf;
 const int M = 25;
@@ -27,11 +27,16 @@ struct Player {
     int noOfMatches = 0;
     int HighestScore = 0;
     string* friendNames = nullptr;
+    string* accept = nullptr;
+    string* send = nullptr;
     int* matchHistory = nullptr;
     int numfriends = 0;
+    int numAccept = 0;
+    int numSend = 0;
+    
     string theme;
     Player() {
-
+       
     }
     void operator=(const Player& tmp) {
         name = tmp.name;
@@ -42,6 +47,11 @@ struct Player {
         HighestScore = tmp.HighestScore;
         friendNames = tmp.friendNames;
         matchHistory = tmp.matchHistory;
+        numfriends = tmp.numfriends;
+        numAccept = tmp.numAccept;
+        numSend = tmp.numSend;
+        accept = tmp.accept;
+        send = tmp.send;
     }
 };
 
@@ -68,6 +78,9 @@ public:
     Player getPlayerObject(int index) {
         return players[index];
     }
+    int getNumAccept() {
+        return players[currentPlayer1].numAccept;
+    }
     void ReadPlayers();
     string getTheme() {
         return players[currentPlayer1].theme;
@@ -79,6 +92,36 @@ public:
     void display();
     int& getPlayer1() {
         return currentPlayer1;
+    }
+    bool isFriend(string str) {
+        for (int i = 0; i < players[currentPlayer1].numfriends; i++) {
+            if (players[currentPlayer1].friendNames[i] == str) {
+                return true;
+            }
+        }
+        return false;
+    }
+    int getCurrent1() {
+        return currentPlayer1;
+    }
+    void addAccept(string name,int index) {
+        int t = players[index].numAccept;
+        string* tmp = new string[t + 1];
+        for (int i = 0; i < t; i++) {
+            tmp[i] = players[index].accept[i];
+        }
+        tmp[t] = name;
+        players[index].accept = tmp;
+        players[index].numAccept += 1;
+    }
+    string playerFriend(int num) {
+        return players[currentPlayer1].friendNames[num];
+    }
+    string playerAccept(int num) {
+        return players[currentPlayer1].accept[num];
+    }
+    string getName(int num) {
+        return players[num].name;
     }
     string getPlayerName(int num);
     int getScore(int num);
@@ -129,7 +172,23 @@ public:
             WritePlayers();  
         }
     }
-  
+    
+    void addFriend(string name, int index) {
+        int t = players[index].numfriends;
+        string* tmp = new string[t + 1];
+        for (int i = 0; i < t; i++) {
+            tmp[i] = players[index].friendNames[i];
+        }
+        tmp[t] = name;
+        players[index].friendNames = tmp;
+        players[index].numfriends += 1;
+    }
+    void removeAccept(int index) {
+        for (int i = index; i < players[currentPlayer1].numAccept - 1; i++) {
+            players[currentPlayer1].accept[i] = players[currentPlayer1].accept[i + 1];
+        }
+        players[currentPlayer1].numAccept -= 1;
+    }
     int& getPlayer2() {
         return currentPlayer2;
     }
@@ -345,8 +404,9 @@ public:
 };
 class Friends :public State {
 private:
-    //int subState;
+    int subState;
     PlayerProfile* players;
+    HashMap mm;
     int numOptions;
     string* optionNames;
     RectangleShape* buttons;
@@ -355,11 +415,24 @@ private:
     Texture backGroundTexture;
     Sprite backGroundSprite;
     Text menuName;
+    RectangleShape* friendName;
+    Text* text1;
+    Text* text2;
+    int amount;
+    string number;
+    
+    bool isAvailable = false;
 public:
     Friends(PlayerProfile* player) :players(player) {
+        amount = players->getNumFriends();
+        RectangleShape* friendName = new RectangleShape[amount];
+        text1 = new Text[amount];
+      
+       
+        int subState = 0;
         numOptions = 4;
         optionNames = new string[numOptions]{ "Friends","Send Requests","Accept Requests","Exit" };
-        buttons = new RectangleShape[numOptions];
+        buttons = new RectangleShape[15];
         text = new Text[numOptions];
 
         if (!font.loadFromFile("images/arial.ttf")) {
