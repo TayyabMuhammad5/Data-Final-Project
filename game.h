@@ -7,7 +7,7 @@
 #include<ctime>
 #include <SFML/Graphics.hpp>
 #include "AVLTree.h"
-
+#include "HashMap.h"
 using namespace std;
 using namespace sf;
 const int M = 25;
@@ -27,11 +27,16 @@ struct Player {
     int noOfMatches = 0;
     int HighestScore = 0;
     string* friendNames = nullptr;
+    string* accept = nullptr;
+    string* send = nullptr;
     int* matchHistory = nullptr;
     int numfriends = 0;
+    int numAccept = 0;
+    int numSend = 0;
+    
     string theme;
     Player() {
-
+       
     }
     void operator=(const Player& tmp) {
         name = tmp.name;
@@ -42,144 +47,16 @@ struct Player {
         HighestScore = tmp.HighestScore;
         friendNames = tmp.friendNames;
         matchHistory = tmp.matchHistory;
+        numfriends = tmp.numfriends;
+        numAccept = tmp.numAccept;
+        numSend = tmp.numSend;
+        accept = tmp.accept;
+        send = tmp.send;
     }
 };
 
 
-struct GameElements {
-    int x;
-    int y;
-    int val;
-    GameElements* next;
 
-    GameElements(int x, int y, int val) : x(x), y(y), val(val), next(nullptr) {}
-};
-
-class Save {
-private:
-    string name;
-    string TimeStamp;
-    int score;
-    GameElements* root;
-
-    string intToStr(int num) {
-        string res;
-        if (num == 0) return "0";
-        while (num > 0) {
-            res = char('0' + (num % 10)) + res;
-            num /= 10;
-        }
-        return res;
-    }
-
-    string pad2(int num) {
-        string s = intToStr(num);
-        return (s.length() < 2 ? "0" + s : s);
-    }
-
-    string getCurrentTimestamp() {
-        time_t now = time(nullptr);
-        tm t;
-        localtime_s(&t, &now);
-
-
-        return intToStr(1900 + t.tm_year) + "-" + pad2(1 + t.tm_mon) + "-" + pad2(t.tm_mday) +
-            " " + pad2(t.tm_hour) + ":" + pad2(t.tm_min) + ":" + pad2(t.tm_sec);
-
-    }
-
-public:
-    Save() {
-        name = "";
-        TimeStamp = "";
-        root = nullptr;
-        score = 0;
-    }
-
-    Save(string n,int s) {
-        score = s;
-        name = n;
-        TimeStamp = getCurrentTimestamp();
-        root = nullptr;
-    }
-
-    void addElement(int x, int y, int val) {
-        GameElements* newNode = new GameElements(x, y, val);
-        newNode->next = root;
-        root = newNode;
-    }
-    void convertToGrid() {
-        GameElements* tmp = root;
-        int i = 0;
-        while (i < M) {
-            int j = 0;
-            while (j < N) {
-                grid[tmp->y][tmp->x] = tmp->val;
-                cout << tmp->val << " ";
-                j++;
-                tmp = tmp->next;
-            }
-            cout << endl;
-            i++;
-        }
-    }
-    void serialize(const string& filename) {
-        ofstream out(filename.c_str());
-        out << name << endl;
-        out << score << endl;
-        out << TimeStamp << endl;
-        
-        GameElements* current = root;
-        while (current) {
-            out << current->x << " " << current->y << " " << current->val << endl;
-            current = current->next;
-        }
-        out.close();
-    }
-
-    void deserialize(const string& filename) {
-        ifstream in(filename.c_str());
-        if (!in) return;
-        string px;
-        getline(in, name);
-        getline(in, TimeStamp);
-        getline(in, px);
-        score = stoi(px);
-        root = nullptr;
-        int x, y, val;
-        while (in >> x >> y >> val) {
-            grid[x][y] = val;
-            addElement(x, y, val);
-        }
-        in.close();
-    }
-    string sanitize(const string& s) {
-        string result;
-        for (char c : s) {
-            if ((c >= 'a' && c <= 'z') ||
-                (c >= 'A' && c <= 'Z') ||
-                (c >= '0' && c <= '9')) {
-                result += c;
-            }
-        }
-        return result;
-    }
-
-    string getSaveID() {
-        // Combine name and sanitized timestamp
-        return sanitize(name)  + sanitize(TimeStamp);
-    }
-
-    void printSave() {
-        cout << "Name: " << name << endl;
-        cout << "Time: " << TimeStamp << endl;
-        GameElements* current = root;
-        while (current) {
-            cout << "(" << current->x << ", " << current->y << ") = " << current->val << endl;
-            current = current->next;
-        }
-    }
-};
 
 
 class PlayerProfile {
@@ -201,6 +78,9 @@ public:
     Player getPlayerObject(int index) {
         return players[index];
     }
+    int getNumAccept() {
+        return players[currentPlayer1].numAccept;
+    }
     void ReadPlayers();
     string getTheme() {
         return players[currentPlayer1].theme;
@@ -212,6 +92,36 @@ public:
     void display();
     int& getPlayer1() {
         return currentPlayer1;
+    }
+    bool isFriend(string str) {
+        for (int i = 0; i < players[currentPlayer1].numfriends; i++) {
+            if (players[currentPlayer1].friendNames[i] == str) {
+                return true;
+            }
+        }
+        return false;
+    }
+    int getCurrent1() {
+        return currentPlayer1;
+    }
+    void addAccept(string name,int index) {
+        int t = players[index].numAccept;
+        string* tmp = new string[t + 1];
+        for (int i = 0; i < t; i++) {
+            tmp[i] = players[index].accept[i];
+        }
+        tmp[t] = name;
+        players[index].accept = tmp;
+        players[index].numAccept += 1;
+    }
+    string playerFriend(int num) {
+        return players[currentPlayer1].friendNames[num];
+    }
+    string playerAccept(int num) {
+        return players[currentPlayer1].accept[num];
+    }
+    string getName(int num) {
+        return players[num].name;
     }
     string getPlayerName(int num);
     int getScore(int num);
@@ -262,9 +172,23 @@ public:
             WritePlayers();  
         }
     }
-   /* void setScore(int num) {
-        players[currentPlayer1].score = num;
-    }*/
+    
+    void addFriend(string name, int index) {
+        int t = players[index].numfriends;
+        string* tmp = new string[t + 1];
+        for (int i = 0; i < t; i++) {
+            tmp[i] = players[index].friendNames[i];
+        }
+        tmp[t] = name;
+        players[index].friendNames = tmp;
+        players[index].numfriends += 1;
+    }
+    void removeAccept(int index) {
+        for (int i = index; i < players[currentPlayer1].numAccept - 1; i++) {
+            players[currentPlayer1].accept[i] = players[currentPlayer1].accept[i + 1];
+        }
+        players[currentPlayer1].numAccept -= 1;
+    }
     int& getPlayer2() {
         return currentPlayer2;
     }
@@ -480,8 +404,9 @@ public:
 };
 class Friends :public State {
 private:
-    //int subState;
+    int subState;
     PlayerProfile* players;
+    HashMap mm;
     int numOptions;
     string* optionNames;
     RectangleShape* buttons;
@@ -490,11 +415,24 @@ private:
     Texture backGroundTexture;
     Sprite backGroundSprite;
     Text menuName;
+    RectangleShape* friendName;
+    Text* text1;
+    Text* text2;
+    int amount;
+    string number;
+    
+    bool isAvailable = false;
 public:
     Friends(PlayerProfile* player) :players(player) {
+        amount = players->getNumFriends();
+        RectangleShape* friendName = new RectangleShape[amount];
+        text1 = new Text[amount];
+      
+       
+        int subState = 0;
         numOptions = 4;
         optionNames = new string[numOptions]{ "Friends","Send Requests","Accept Requests","Exit" };
-        buttons = new RectangleShape[numOptions];
+        buttons = new RectangleShape[15];
         text = new Text[numOptions];
 
         if (!font.loadFromFile("images/arial.ttf")) {
@@ -695,16 +633,15 @@ private:
     char keyPressed_Player2;
     Clock clock;
     int score1 = 0;
-    int occurence1 = 0, threshold1 = 10, multiple1 = 2;
     int score2 = 0;
-    int occurence2 = 0, threshold2 = 10, multiple2 = 2;
     bool isPlayer1Dead = false, isPlayer2Dead = false;
     Text score;
-    int capturedTiles1 = 0;
-    int capturedTiles2 = 0;
-    int occurences1 = 0;
-    int occurences2 = 0;
-
+    int tempGrid[M][N] = { 0 };
+    static int count;
+    bool isPlayer1moving = false;
+    bool isPlayer2moving = false;
+    int occurence1 = 0, threshold1 = 10, multiple1 = 2,captured1 = 0,captured2 = 0;
+    int occurence2 = 0, threshold2 = 10, multiple2 = 2;
 public:
     MultiPlayerMode(PlayerProfile* player) : profile(player) {
         t1.loadFromFile("images/tiles_30.png");
@@ -815,6 +752,7 @@ public:
     Game(RenderWindow& render_window, PlayerProfile* player) :window(render_window), state_manager(render_window, player), profile(player) {};
     void start();
 };
+int MultiPlayerMode::count = 0;
 #endif
 
 

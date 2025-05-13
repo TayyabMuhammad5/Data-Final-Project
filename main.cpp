@@ -1,7 +1,10 @@
 #include <SFML/Graphics.hpp>
 #include <time.h>
+#include<sstream>
 #include "game.h"
 #include "Matching.h"
+#include "Save.h"
+#include "HashMap.h"
 using namespace sf;
 
 
@@ -57,31 +60,26 @@ void PlayerProfile::ReadPlayers() {
         }
         else if (i == 6 && line != "null") {
 
-            char* arr = new char[100];
-            int count = 0;
-            players[numPlayers - 1].numfriends = 1;
-            for (int i = 0; i < line.length(); i++) {
-                if (line[i] == ',') {
-                    players[numPlayers - 1].numfriends += 1;
-                }
+           
+            stringstream ss(line);
+            string token;
+
+            // Count friends first
+            while (getline(ss, token, ',')) {
+                players[numPlayers - 1].numfriends += 1;
             }
 
+            // Allocate and reset stream
+            ss.clear();
+            ss.seekg(0, ios::beg);
+            ss.str(line);
+
             players[numPlayers - 1].friendNames = new string[players[numPlayers - 1].numfriends];
-            int k = 0;
-            for (int i = 0; i < line.length(); i++) {
-                if (line[i] == ',') {
-                    arr[count] = '\0';
-                    players[numPlayers - 1].friendNames[k] = arr;
-                    k++;
-                    arr = new char[100];
-                    count = 0;
-                    continue;
-                }
-                arr[count] = line[i];
-                count++;
+            int fIdx = 0;
+            while (getline(ss, token, ',')) {
+                players[numPlayers - 1].friendNames[fIdx++] = token;
             }
-            arr[count] = '\0';
-            players[numPlayers - 1].friendNames[k] = arr;
+            //cout << players[numPlayers - 1].numfriends << endl;
         }
         else if (i == 7 && line != "null") {
 
@@ -97,6 +95,28 @@ void PlayerProfile::ReadPlayers() {
         else if (i == 8) {
             players[numPlayers - 1].theme = line;
         }
+        else if (i == 9) {
+            // Accept
+            stringstream ss(line);
+            string token;
+
+            // Count friends first
+            while (getline(ss, token, ',')) {
+                players[numPlayers - 1].numAccept += 1;
+            }
+
+            // Allocate and reset stream
+            ss.clear();
+            ss.seekg(0, ios::beg);
+            ss.str(line);
+
+            players[numPlayers - 1].accept = new string[players[numPlayers - 1].numAccept];
+            int fIdx = 0;
+            while (getline(ss, token, ',')) {
+                players[numPlayers - 1].accept[fIdx++] = token;
+            }
+        }
+       
         i++;
     }
 }
@@ -117,11 +137,12 @@ void PlayerProfile::WritePlayers() {
                 if (j != players[i].numfriends - 1)
                     outFile << ',';
             }
+            outFile << '\n';
         }
         else {
-            outFile << "null";
+            outFile << '\n';
         }
-        outFile << '\n';
+        
 
         if (players[i].matchHistory != nullptr && players[i].noOfMatches > 0) {
             for (int j = 0; j < players[i].noOfMatches; ++j) {
@@ -129,11 +150,23 @@ void PlayerProfile::WritePlayers() {
                 if (j != players[i].noOfMatches - 1)
                     outFile << ',';
             }
+            outFile << '\n';
         }
         else {
-            outFile << "null" << '\n';
+            outFile << '\n';
         }
         outFile <<  players[i].theme << '\n';
+        if (players[i].accept != nullptr && players[i].numAccept > 0) {
+            for (int j = 0; j < players[i].numAccept; ++j) {
+                outFile << players[i].accept[j];
+                if (j != players[i].numAccept - 1)
+                    outFile << ',';
+            }
+            outFile << '\n';
+        }
+        else {
+            outFile << '\n';
+        }
        // outFile << '\n';
 
     }
@@ -143,7 +176,7 @@ void PlayerProfile::WritePlayers() {
 
 void PlayerProfile::display() {
 
-  //  cout << "numPlayers:" << numPlayers << endl;
+   // cout << "numPlayers:" << numPlayers << endl;
     for (int i = 0;i < numPlayers; i++) {
 
         cout << "Name: " << players[i].name << endl;
@@ -157,13 +190,18 @@ void PlayerProfile::display() {
         for (int j = 0; j < players[i].numfriends; j++) {
             cout << players[i].friendNames[j] << ", ";
         }
-        //cout << endl;
+        cout << endl;
         cout << "Match History: ";
        /* for (int j = 0; j < players[i].noOfMatches; j++) {
             cout << players[i].matchHistory[j] << ", ";
         }*/
         cout << endl;
         cout << "Theme: " << players[i].theme << endl;
+        cout << players[i].numAccept << endl;
+        for (int j = 0; j < players[i].numAccept; j++) {
+            cout << players[i].accept[j] << ", ";
+        }
+        cout << endl;
     }
 }
 int PlayerProfile::CheckUsername(string username) {
@@ -255,6 +293,10 @@ void StateManager::ChangeState(int newstate) {
     else if (state == 9) {
         state_class = new MatchMaking(profile);
     }
+    else if (state == 10) {
+        state_class = new Friends(profile);
+    }
+
 
 }
 void StateManager::handleEvent(Event& e) {
@@ -410,6 +452,9 @@ void SubMenu::handleEvents(Event& event) {
                     }
                     else if (i == 3) {
                         subState = 1;
+                    }
+                    else if (i == 4) {
+                        state = 10;
                     }
                 }
             }
@@ -648,72 +693,218 @@ void Friends::handleEvents(Event& event) {
         if (event.mouseButton.button == Mouse::Left) {
             int mouse_x = event.mouseButton.x;
             int mouse_y = event.mouseButton.y;
-            for (int i = 0; i < numOptions; i++) {
-                if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouse_x), static_cast<float>(mouse_y))) {
-                    if (i == 0) {
-                        cout << players->getNumFriends() << endl;
-                        for (int i = 0;i < players->getNumFriends();i++) {
-                            players->displayFriends();
+            if (subState == 0) {
+                for (int i = 0; i < numOptions; i++) {
+                    if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouse_x), static_cast<float>(mouse_y))) {
+                        if (i == 0) {
+                            subState = 1;
+                        }
+                        else if (i == 1) {
+                            subState = 3;
+                        }
+                        else if (i == 2) {
+                            subState = 2;
                         }
                     }
-                    else if (i == 1) {
+                }
+            }
+            if (subState == 2) {
+                for (int i = 0; i < players->getNumAccept(); i++) {
+                    if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouse_x), static_cast<float>(mouse_y))) {
 
+                        for (int i = 0; i < players->getNumPlyaers(); i++) {
+                            string ptr = players->getName(i);
+                            mm.insert(players->getName(i), i);
+                        }
+                        string str = players->playerAccept(i);
+                        int index = mm.findIndex(players->playerAccept(i));
+                        players->addFriend(players->playerAccept(i), players->getPlayer1());
+                        players->removeAccept(i);
+                        players->addFriend(players->getName(players->getPlayer1()), index);
+                        players->WritePlayers();
+                        players->display();
                     }
-                    else if (i == 2) {
+                }
+            }
+            
+        }
+    }
+    if (subState == 3) {
+        if (event.type == sf::Event::KeyPressed) {
+            if (event.key.code == sf::Keyboard::Enter) {
+                if (players->isFriend(number) || number == players->getName(players->getCurrent1())) {
+                    isAvailable = true;
+                    return;
+                }
 
-                    }
+                for (int i = 0; i < players->getNumPlyaers(); i++) {
+                    string ptr = players->getName(i);
+                    mm.insert(players->getName(i), i);
+                }
+                int index = mm.findIndex(number);
+                players->addAccept(players->getName(players->getCurrent1()), index);
+                players->WritePlayers();
+                players->display();
+                subState = 0;
+            }
+        }
+        if (event.key.code == sf::Keyboard::BackSpace) {
+            if (!number.empty()) {
+                number.pop_back();
+                isAvailable = false;
+            }
+        }
+        else if (event.type == sf::Event::TextEntered) {
+            if (event.text.unicode < 128) {  // ASCII characters only
+                char enteredChar = static_cast<char>(event.text.unicode);
+                cout << number << endl;
+                if (std::isalnum(enteredChar) || std::isspace(enteredChar)) {
+                    number += enteredChar;
+                }
+                else if (enteredChar == 8 && !number.empty()) {  // Handle backspace
+                    number.pop_back();
                 }
             }
         }
     }
 }
 void Friends::run() {
+    if (subState == 0) {
+        menuName.setCharacterSize(50);
+        menuName.setFont(font);
+        menuName.setFillColor(Color::White);
+        menuName.setString("Menu");
+        menuName.setPosition(550, 200);
 
-    menuName.setCharacterSize(50);
-    menuName.setFont(font);
-    menuName.setFillColor(Color::White);
-    menuName.setString("Menu");
-    menuName.setPosition(550, 200);
+        for (int i = 0; i < numOptions; i++) {
+            buttons[i].setSize(Vector2f(350.0f, 50.0f));
+            buttons[i].setPosition(450, 300 + i * 56);
+            buttons[i].setFillColor(Color::Transparent);
+            buttons[i].setOutlineThickness(2);
+            buttons[i].setOutlineColor(Color::White);
+            buttons[i].setOrigin(0, 0);
+           
 
-    for (int i = 0; i < numOptions; i++) {
+            text[i].setFont(font);
+            text[i].setString(optionNames[i]);
+            text[i].setCharacterSize(24);
+            text[i].setFillColor(Color::Black);
+            text[i].setPosition(525, 305 + i * 56);
+        }
+    }
+    if (subState == 1) {
+        
 
-        buttons[i].setSize(Vector2f(350.0f, 50.0f));
-        buttons[i].setPosition(450, 300 + i * 56);
-        buttons[i].setFillColor(Color::Transparent);
-        buttons[i].setOutlineThickness(2);
-        buttons[i].setOutlineColor(Color::White);
-        buttons[i].setOrigin(0, 0);
+        for (int i = 0; i < players->getNumFriends(); i++) {
+            buttons[i].setSize(Vector2f(350.0f, 50.0f));
+            buttons[i].setPosition(450, 300 + i * 56);
+            buttons[i].setFillColor(Color::Transparent);
+            buttons[i].setOutlineThickness(2);
+            buttons[i].setOutlineColor(Color::White);
+            buttons[i].setOrigin(0, 0);
 
-        text[i].setFont(font);
-        text[i].setString(optionNames[i]);
-        text[i].setCharacterSize(24);
-        text[i].setFillColor(Color::Black);
-        text[i].setPosition(525, 305 + i * 56);
+            text1[i].setFont(font);
+            text1[i].setString(players->playerFriend(i));
+            text1[i].setCharacterSize(24);
+            text1[i].setFillColor(Color::Black);
+            text1[i].setPosition(525, 305 + i * 56);
+        }
+    }
+    if (subState == 2) {
+        text2 = new Text[players->getNumAccept()];
+        for (int i = 0; i < players->getNumAccept(); i++) {
+            buttons[i].setSize(Vector2f(350.0f, 50.0f));
+            buttons[i].setPosition(450, 300 + i * 56);
+            buttons[i].setFillColor(Color::Transparent);
+            buttons[i].setOutlineThickness(2);
+            buttons[i].setOutlineColor(Color::White);
+            buttons[i].setOrigin(0, 0);
+
+            text2[i].setFont(font);
+            string tmp = players->playerAccept(i);
+            text2[i].setString(players->playerAccept(i));
+            text2[i].setCharacterSize(24);
+            text2[i].setFillColor(Color::Black);
+            text2[i].setPosition(525, 305 + i * 56);
+        }
+    }
+    if (subState == 3) {
+
     }
 }
 void Friends::render(RenderWindow& window) {
     window.draw(backGroundSprite);
-    window.draw(menuName);
+    if (subState == 0) {
+        window.draw(backGroundSprite);
+        window.draw(menuName);
 
-    for (int i = 0; i < numOptions; i++) {
-        int mouseX = Mouse::getPosition(window).x;
-        int mouseY = Mouse::getPosition(window).y;
+        for (int i = 0; i < numOptions; i++) {
+            int mouseX = Mouse::getPosition(window).x;
+            int mouseY = Mouse::getPosition(window).y;
 
-        if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouseX), static_cast<float>(mouseY))) {
-            // Hover effect here
-            buttons[i].setFillColor(sf::Color(100, 100, 100)); // grey box
-            text[i].setFillColor(sf::Color::Yellow);
+            if (buttons[i].getGlobalBounds().contains(static_cast<float>(mouseX), static_cast<float>(mouseY))) {
+                // Hover effect here
+                buttons[i].setFillColor(sf::Color(100, 100, 100)); // grey box
+                text[i].setFillColor(sf::Color::Yellow);
+            }
+            else {
+                buttons[i].setFillColor(Color::Transparent);   // transparent background
+                text[i].setFillColor(Color::White);           // default font color
+            }
         }
-        else {
+
+        for (int i = 0; i < numOptions; i++) {
+            window.draw(buttons[i]);
+            window.draw(text[i]);
+        }
+    }
+    if (subState == 1) {
+        window.draw(backGroundSprite);
+        window.draw(menuName);
+        for (int i = 0; i < players->getNumFriends(); i++) {
             buttons[i].setFillColor(Color::Transparent);   // transparent background
-            text[i].setFillColor(Color::White);           // default font color
+                text1[i].setFillColor(Color::White);           // default font color
+        }
+
+        for (int i = 0; i < players->getNumFriends(); i++) {
+            window.draw(buttons[i]);
+            window.draw(text1[i]);
+        }
+
+    }
+    if (subState == 2) {
+        window.draw(menuName);
+        for (int i = 0; i < players->getNumAccept(); i++) {
+            buttons[i].setFillColor(Color::Transparent);   // transparent background
+            text2[i].setFillColor(Color::White);           // default font color
+        }
+
+        for (int i = 0; i < players->getNumAccept(); i++) {
+            window.draw(buttons[i]);
+            window.draw(text2[i]);
+        }
+    }
+    if (subState == 3) {
+
+        Text text;
+        text.setFont(font);
+        text.setString("Enter the Player Name: ");
+        text.setPosition(200, 200);
+        text.setCharacterSize(25);
+        window.draw(text);
+        text.setString(number);
+        text.setPosition(550, 200);
+        window.draw(text);
+        if (isAvailable) {
+            text.setCharacterSize(30);
+            text.setString("*Invalid input ");
+            text.setPosition(450, 300);
+            text.setFillColor(Color::Red);
+            window.draw(text);
         }
     }
 
-    for (int i = 0; i < numOptions; i++) {
-        window.draw(buttons[i]);
-        window.draw(text[i]);
-    }
+    
 }
 // Leader Board
 void LeaderBoard::handleEvents(Event& event) {
@@ -791,18 +982,10 @@ bool Authentication::signUp(string user, string pass) {
 
     if (pass.length() < 8) {
         isPassCorrect = false;
-    }
-    ifstream inFile("username.txt");
-    string line;
-    while (getline(inFile, line)) {
-        if (user == line) {
-            isAlreadyPresent = true;
-            return false;
-        }
+        return false;
     }
     if (profile->CheckUsername(user) != -1) {
         isAlreadyPresent = true;
-
         return false;
     }
     else {
@@ -816,6 +999,7 @@ bool Authentication::signUp(string user, string pass) {
     }
     //profile->display();
     profile->WritePlayers();
+    return true;
     /*ofstream outFile("username.txt", ios::app);
     outFile << user << endl;
     outFile << pass << endl;
@@ -1078,12 +1262,7 @@ void drop(int y, int x)
 void SingularMode::handleEvents(Event& event) {
     if (event.type == Event::KeyPressed) {
         if (event.key.code == Keyboard::Escape) {
-            /*for (int i = 1;i < M - 1;i++)
-                for (int j = 1;j < N - 1;j++)
-                    grid[i][j] = 0;
-
-            x = 10;y = 0;
-            Game = true;*/
+            
             state = 8;
         }
 
@@ -1294,7 +1473,12 @@ void SingularMode::run() {
     timer += time;
 
     if (!Game) {
-        
+        for (int i = 1;i < M - 1;i++)
+                for (int j = 1;j < N - 1;j++)
+                    grid[i][j] = 0;
+
+            x = 10;y = 0;
+            Game = true;
         cout << profile->getPlayer1() << endl;
           profile->addScore(score, 1);
           profile->display();
@@ -1494,9 +1678,9 @@ void MultiPlayerMode::handleEvents(Event& event) {
             for (int i = 1;i < M - 1;i++)
                 for (int j = 1;j < N - 1;j++)
                     grid[i][j] = 0;
-            x = 10;y = 0;
-
-            Game = true;
+            x = 10;y = 1;
+            x2 = 100, y2 = 1;
+            state = 3;
         }
     }
 }
@@ -1584,31 +1768,47 @@ void MultiPlayerMode::run() {
         if (x2 < 0) x2 = 0; if (x2 > N - 1) x2 = N - 1;
         if (y2 < 1) y2 = 1; if (y2 > M - 1) y2 = M - 1;
         
-        if (grid[y][x] == 3) Game = false; // hit own trail
-        if (grid[y2][x2] == 5) Game = false; // hit own trail
-        if (grid[y][x] == 5) {
+        
+        if (grid[y][x] == 5 || grid[y][x] == 3) {
             isPlayer1Dead = true;
            
         } // Player 1 hits player 2's trail
-        if (grid[y2][x2] == 3) {
+        if (grid[y2][x2] == 3 || grid[y2][x2] == 5) {
             isPlayer2Dead = true;
             
         }
         // Player 2 hits player 1's trail
         if (!isPlayer1Dead) {
-            if (grid[y][x] == 0) grid[y][x] = 3; // trail creation for player 1
+            if (grid[y][x] == 0) {
+                grid[y][x] = 3;
+                isPlayer1moving = true;
+            }
+            // trail creation for player 1
+           
         }
         if (!isPlayer2Dead) {
-            if (grid[y2][x2] == 0) grid[y2][x2] = 5; // trail creation for player 2
+            if (grid[y2][x2] == 0) {
+                grid[y2][x2] = 5;
+                isPlayer2moving = true;
+            } // trail creation for player 2
+           
         }
         timer = 0;
     }
    
-   
+ 
     for (int i = 0;i < enemyCount;i++) a[i].move();
-
+    if (!isPlayer1moving) {
+        dx = 0;
+        dy = 0;
+    }
+    if (!isPlayer2moving) {
+        dx2 = 0;
+        dy2 = 0;
+    }
+   
     //// Player 1
-    if ((grid[y][x] == 1 || grid[y][x] == 2 || grid[y][x] == 4) && !isPlayer1Dead && grid[y2][x2] != 0)
+    if ((grid[y][x] == 1 || grid[y][x] == 2 || grid[y][x] == 4) && !isPlayer1Dead && isPlayer1moving && !isPlayer2moving)
     {
         dx = dy = 0;
         for (int i = 0;i < enemyCount;i++)
@@ -1617,40 +1817,125 @@ void MultiPlayerMode::run() {
         for (int i = 0;i < M;i++) {
             for (int j = 0;j < N;j++) {
                 if (grid[i][j] == 0) {
-                    grid[i][j] = 4;  // Player 1 captures empty spaces as 4
-                    score1++;
+                    grid[i][j] = 2;  // Player 1 captures empty spaces as 4
+                    captured1++;
                 }
                 else if (grid[i][j] == 3) {
                     grid[i][j] = 2;  // Player 1's trail becomes Player 1's captured
+                    captured1++;
                 }
                 else if (grid[i][j] == -1) {
                     grid[i][j] = 0;
                 }
             }
         }
+        isPlayer1moving = false;
+        
     }
     
     //// Player 2
-    if ((grid[y2][x2] == 1 || grid[y2][x2] == 4 || grid[y2][x2] == 2) && !isPlayer2Dead && grid[y][x] != 0) {
+    if ((grid[y2][x2] == 1 || grid[y2][x2] == 4 || grid[y2][x2] == 2) && !isPlayer2Dead && isPlayer2moving && !isPlayer1moving) {
         dx2 = dy2 = 0;
+
         for (int i = 0;i < enemyCount;i++)
             drop(a[i].y / ts, a[i].x / ts);
+
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 if (grid[i][j] == 0) {
-                    grid[i][j] = 2;  // Player 2 captures empty spaces as 2
-                    score2++;
+                    cout << "I am running " << endl;
+                    cout << isPlayer2moving << endl;
+                    //cout << "Captured using player 2" << endl;
+                    grid[i][j] = 4;  // Player 2 captures empty spaces as 2
+                    captured2++;
                 }
                 else if (grid[i][j] == 5) {
                     grid[i][j] = 4;  // Player 2's trail becomes Player 2's captured
+                    captured2++;
                 }
                 else if (grid[i][j] == -1) {
                     grid[i][j] = 0;
                 }
             }
         }
+        isPlayer2moving = false;
+    }
+
+    if ((grid[y][x] == 1 || grid[y][x] == 2 || grid[y][x] == 4) && !isPlayer1Dead && isPlayer1moving && isPlayer2moving)
+    {
+        dx = dy = 0;
+        for (int i = 0;i < enemyCount;i++)
+            drop(a[i].y / ts, a[i].x / ts);
+
+        for (int i = 0;i < M;i++) {
+            for (int j = 0;j < N;j++) {
+                if (grid[i][j] == 0) {
+                    grid[i][j] = 2;  // Player 1 captures empty spaces as 4
+                    captured1++;
+                }
+                else if (grid[i][j] == 3) {
+                    grid[i][j] = 2;  // Player 1's trail becomes Player 1's captured
+                    captured1++;
+                }
+                else if (grid[i][j] == -1) {
+                    grid[i][j] = 0;
+                }
+            }
+        }
+        isPlayer1moving = false;
+
+    }
+
+    if ((grid[y2][x2] == 1 || grid[y2][x2] == 4 || grid[y2][x2] == 2) && !isPlayer2Dead && isPlayer2moving && isPlayer1moving) {
+        dx2 = dy2 = 0;
+
+        for (int i = 0;i < enemyCount;i++)
+            drop(a[i].y / ts, a[i].x / ts);
+
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                if (grid[i][j] == 0) {
+                    grid[i][j] = 4;  // Player 2 captures empty spaces as 2
+                    captured2++;
+                }
+                else if (grid[i][j] == 5) {
+                    grid[i][j] = 4;  // Player 2's trail becomes Player 2's captured
+                    captured2++;
+                }
+                else if (grid[i][j] == -1) {
+                    grid[i][j] = 0;
+                }
+            }
+        }
+        isPlayer2moving = false;
     }
     
+    if (occurence1 > 3) {
+        threshold1 = 5;
+    }
+    else if (occurence1 > 5) {
+        multiple1 = 4;
+    }
+    if (captured1 > threshold1) {
+        captured1 *= multiple1;
+        occurence1++;
+    }
+    score1 += captured1;
+    captured1 = 0;
+
+    if (occurence2 > 3) {
+        threshold2 = 5;
+    }
+    else if (occurence2 > 5) {
+        multiple2 = 4;
+    }
+    if (captured2 > threshold2) {
+        captured2 *= multiple2;
+        occurence2++;
+    }
+    score2 += captured2;
+    captured2 = 0;
+   
     for (int i = 0;i < enemyCount;i++) {
         if (grid[a[i].y / ts][a[i].x / ts] == 5) {
             isPlayer2Dead = true;
@@ -1733,7 +2018,7 @@ void MultiPlayerMode::render(RenderWindow& window) {
 
     // Player 1 score
     score.setPosition(250, 3);
-    score.setString(to_string(score2));
+    score.setString(to_string(score1));
     window.draw(score);
 
     // Player 2 score section
@@ -1761,7 +2046,7 @@ void MultiPlayerMode::render(RenderWindow& window) {
 
     // Player 2 score
     score.setPosition(820, 3);
-    score.setString(to_string(score1));
+    score.setString(to_string(score2));
     window.draw(score);
 
     sEnemy.rotate(20);
