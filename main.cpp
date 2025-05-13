@@ -1618,6 +1618,7 @@ void MultiPlayerMode::run() {
             for (int j = 0;j < N;j++) {
                 if (grid[i][j] == 0) {
                     grid[i][j] = 4;  // Player 1 captures empty spaces as 4
+                    score1++;
                 }
                 else if (grid[i][j] == 3) {
                     grid[i][j] = 2;  // Player 1's trail becomes Player 1's captured
@@ -1638,6 +1639,7 @@ void MultiPlayerMode::run() {
             for (int j = 0; j < N; j++) {
                 if (grid[i][j] == 0) {
                     grid[i][j] = 2;  // Player 2 captures empty spaces as 2
+                    score2++;
                 }
                 else if (grid[i][j] == 5) {
                     grid[i][j] = 4;  // Player 2's trail becomes Player 2's captured
@@ -1731,7 +1733,7 @@ void MultiPlayerMode::render(RenderWindow& window) {
 
     // Player 1 score
     score.setPosition(250, 3);
-    score.setString(to_string(profile->getScore(1)));
+    score.setString(to_string(score2));
     window.draw(score);
 
     // Player 2 score section
@@ -1759,7 +1761,7 @@ void MultiPlayerMode::render(RenderWindow& window) {
 
     // Player 2 score
     score.setPosition(820, 3);
-    score.setString(to_string(profile->getScore(2)));
+    score.setString(to_string(score1));
     window.draw(score);
 
     sEnemy.rotate(20);
