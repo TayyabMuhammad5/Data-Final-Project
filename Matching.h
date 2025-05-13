@@ -87,7 +87,9 @@ public:
 			matchShown = true;
 		}
 		if (gr.isEmpty() && matchShown) {
+			cout << 2 << endl;
 			prevState = -1;
+			state = 2;
 			return;
 		}
 	}
@@ -115,7 +117,9 @@ public:
 		if (matchClock.getElapsedTime().asSeconds() > matchDelay) {
 			matches();
 		}
-		
+		if (Keyboard::isKeyPressed(Keyboard::Escape)) {
+			state = 2;
+		}
 		
 		
 		menuName.setCharacterSize(50);

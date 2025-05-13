@@ -364,6 +364,9 @@ void Menu::handleEvents(Event& event) {
                     else if (i == 2) {
                         state = 9;
                     }
+                    else if (i == 6) {
+                        window.close();
+                    }
                 }
             }
         }
@@ -455,6 +458,9 @@ void SubMenu::handleEvents(Event& event) {
                     }
                     else if (i == 4) {
                         state = 10;
+                    }
+                    else if (i == 5) {
+                        state = 2;
                     }
                 }
             }
@@ -621,7 +627,7 @@ void EndMenu::handleEvents(Event& event) {
                         isSaved = true;
                     }
                     else if (i == 2) {
-                        state = 6;
+                        state = 3;
                     }
                 }
             }
@@ -705,6 +711,9 @@ void Friends::handleEvents(Event& event) {
                         else if (i == 2) {
                             subState = 2;
                         }
+                        else if (i == 3) {
+                            state = 3;
+                        }
                     }
                 }
             }
@@ -769,7 +778,11 @@ void Friends::handleEvents(Event& event) {
     }
 }
 void Friends::run() {
+   
     if (subState == 0) {
+        if (Keyboard::isKeyPressed(Keyboard::Escape)) {
+            state = 3;
+        }
         menuName.setCharacterSize(50);
         menuName.setFont(font);
         menuName.setFillColor(Color::White);
@@ -777,6 +790,7 @@ void Friends::run() {
         menuName.setPosition(550, 200);
 
         for (int i = 0; i < numOptions; i++) {
+            number = "";
             buttons[i].setSize(Vector2f(350.0f, 50.0f));
             buttons[i].setPosition(450, 300 + i * 56);
             buttons[i].setFillColor(Color::Transparent);
@@ -793,7 +807,9 @@ void Friends::run() {
         }
     }
     if (subState == 1) {
-        
+        if (Keyboard::isKeyPressed(Keyboard::Escape)) {
+            subState = 0;
+        }
 
         for (int i = 0; i < players->getNumFriends(); i++) {
             buttons[i].setSize(Vector2f(350.0f, 50.0f));
@@ -811,6 +827,9 @@ void Friends::run() {
         }
     }
     if (subState == 2) {
+        if (Keyboard::isKeyPressed(Keyboard::Escape)) {
+            subState = 0;
+        }
         text2 = new Text[players->getNumAccept()];
         for (int i = 0; i < players->getNumAccept(); i++) {
             buttons[i].setSize(Vector2f(350.0f, 50.0f));
@@ -829,7 +848,9 @@ void Friends::run() {
         }
     }
     if (subState == 3) {
-
+        if (Keyboard::isKeyPressed(Keyboard::Escape)) {
+            subState = 0;
+        }
     }
 }
 void Friends::render(RenderWindow& window) {
@@ -908,6 +929,7 @@ void Friends::render(RenderWindow& window) {
 }
 // Leader Board
 void LeaderBoard::handleEvents(Event& event) {
+  
     if (event.type == Event::MouseButtonPressed) {
         if (event.mouseButton.button == Mouse::Left) {
             int mouse_x = event.mouseButton.x;
@@ -935,7 +957,9 @@ void LeaderBoard::run() {
     menuName.setFillColor(Color::White);
     menuName.setString("LeaderBoard");
     menuName.setPosition(550, 200);
-
+    if (Keyboard::isKeyPressed(Keyboard::Escape)) {
+        state = 2;
+    }
     for (int i = 0; i < numOptions; i++) {
 
         buttons[i].setSize(Vector2f(350.0f, 50.0f));
@@ -1260,14 +1284,15 @@ void drop(int y, int x)
 
 // Singular Mode
 void SingularMode::handleEvents(Event& event) {
-    if (event.type == Event::KeyPressed) {
-        if (event.key.code == Keyboard::Escape) {
-            
-            state = 8;
+    if (!substate) {
+        if (event.type == Event::KeyPressed) {
+            if (event.key.code == Keyboard::Escape) {
+
+                state = 8;
+            }
+
         }
-
     }
-
 }
 // Theme
 void Inventory::handleEvents(Event& event) {
@@ -1463,112 +1488,119 @@ void Inventory::render(RenderWindow& window) {
 
 }
 void SingularMode::run() {
-  
-    if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
-    if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;dy = 0; };
-    if (Keyboard::isKeyPressed(Keyboard::Up)) { dx = 0;dy = -1; };
-    if (Keyboard::isKeyPressed(Keyboard::Down)) { dx = 0;dy = 1; };
-    float time = clock.getElapsedTime().asSeconds();
-    clock.restart();
-    timer += time;
+    if (!substate) {
+        if (Keyboard::isKeyPressed(Keyboard::Left)) { dx = -1;dy = 0; };
+        if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;dy = 0; };
+        if (Keyboard::isKeyPressed(Keyboard::Up)) { dx = 0;dy = -1; };
+        if (Keyboard::isKeyPressed(Keyboard::Down)) { dx = 0;dy = 1; };
+        float time = clock.getElapsedTime().asSeconds();
+        clock.restart();
+        timer += time;
 
-    if (!Game) {
-        for (int i = 1;i < M - 1;i++)
+        if (!Game) {
+            for (int i = 1;i < M - 1;i++)
                 for (int j = 1;j < N - 1;j++)
                     grid[i][j] = 0;
 
             x = 10;y = 0;
             Game = true;
-        cout << profile->getPlayer1() << endl;
-          profile->addScore(score, 1);
-          profile->display();
-          state = 2;
+            cout << profile->getPlayer1() << endl;
+            profile->addScore(score, 1);
             
-        return;
-    }
+            profile->display();
+            substate = 1;
 
 
-    if (timer > delay)
-    {
-        x += dx;
-        y += dy;
-        
-        if (x < 0) x = 0; if (x > N - 1) x = N - 1;
-        if (y < 1) y = 1; if (y > M - 1) y = M - 1;
-
-        if (grid[y][x] == 2) Game = false; // hit own trail
-        if (grid[y][x] == 0) {
-            grid[y][x] = 2; // trail creation
-        }
-        timer = 0;
-    }
-
-    for (int i = 0;i < enemyCount;i++) a[i].move();
-
-   
-
-    if (grid[y][x] == 1) {
-        dx = dy = 0;
-
-        // Mark enemy positions
-        for (int i = 0; i < enemyCount; i++)
-            drop(a[i].y / ts, a[i].x / ts);
-
-        for (int i = 0; i < M; i++)
-            for (int j = 0; j < N; j++)
-                if (grid[i][j] == 2)
-                    grid[i][j] = 6;
-
-        for (int i = 0; i < M; i++) {
-            if (grid[i][0] == 0) FloodFill(i, 0);
-            if (grid[i][N - 1] == 0) FloodFill(i, N - 1);
-        }
-        for (int j = 0; j < N; j++) {
-            if (grid[0][j] == 0) FloodFill(0, j);
-            if (grid[M - 1][j] == 0) FloodFill(M - 1, j);
         }
 
 
-        int captured = 0;
-        for (int i = 0; i < M; i++) {
+        if (timer > delay)
+        {
+            x += dx;
+            y += dy;
+
+            if (x < 0) x = 0; if (x > N - 1) x = N - 1;
+            if (y < 1) y = 1; if (y > M - 1) y = M - 1;
+
+            if (grid[y][x] == 2) Game = false; // hit own trail
+            if (grid[y][x] == 0) {
+                grid[y][x] = 2; // trail creation
+            }
+            timer = 0;
+        }
+
+        for (int i = 0;i < enemyCount;i++) a[i].move();
+
+
+
+        if (grid[y][x] == 1) {
+            dx = dy = 0;
+
+            // Mark enemy positions
+            for (int i = 0; i < enemyCount; i++)
+                drop(a[i].y / ts, a[i].x / ts);
+
+            for (int i = 0; i < M; i++)
+                for (int j = 0; j < N; j++)
+                    if (grid[i][j] == 2)
+                        grid[i][j] = 6;
+
+            for (int i = 0; i < M; i++) {
+                if (grid[i][0] == 0) FloodFill(i, 0);
+                if (grid[i][N - 1] == 0) FloodFill(i, N - 1);
+            }
             for (int j = 0; j < N; j++) {
-                if (grid[i][j] == -1) {
-                    grid[i][j] = 0;
-                }
-                else if (grid[i][j] == 0) {
-                    grid[i][j] = 1;
-                    captured++;
-                }
-                else if (grid[i][j] == 6) {
-                    grid[i][j] = 1;
-                    captured++;
+                if (grid[0][j] == 0) FloodFill(0, j);
+                if (grid[M - 1][j] == 0) FloodFill(M - 1, j);
+            }
+
+
+            int captured = 0;
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    if (grid[i][j] == -1) {
+                        grid[i][j] = 0;
+                    }
+                    else if (grid[i][j] == 0) {
+                        grid[i][j] = 1;
+                        captured++;
+                    }
+                    else if (grid[i][j] == 6) {
+                        grid[i][j] = 1;
+                        captured++;
+                    }
                 }
             }
+            if (occurence > 3) {
+                threshold = 5;
+            }
+            else if (occurence > 5) {
+                multiple = 4;
+            }
+            if (captured > threshold) {
+                captured *= multiple;
+                occurence++;
+                cout << occurence << endl;
+
+            }
+            score += captured;
+
+
         }
-        if (occurence > 3) {
-            threshold = 5;
+        for (int i = 0;i < enemyCount;i++) {
+            if (grid[a[i].y / ts][a[i].x / ts] == 2) {
+                Game = false;
+                return;
+            }
         }
-        else if (occurence>5) {
-            multiple = 4;
-        }
-        if (captured > threshold) {
-            captured *= multiple;
-            occurence++;
-            cout << occurence << endl;
-            
-        }
-        score += captured;
-        
-       
+
     }
-    for (int i = 0;i < enemyCount;i++) {
-        if (grid[a[i].y / ts][a[i].x / ts] == 2) {
-            Game = false;
+    else {
+        if (Keyboard::isKeyPressed(Keyboard::Enter)) {
+            state = 3;
             return;
-        }
+      }
     }
-  
-    
 }
 
 void SingularMode::FloodFill(int i, int j) {
@@ -1583,93 +1615,108 @@ void SingularMode::FloodFill(int i, int j) {
 }
 void SingularMode::render(RenderWindow& window) {
     window.clear();
-    string theme = profile->getTheme();
+    if (!substate) {
+        string theme = profile->getTheme();
 
-    // Apply theming using IntRects (changing appearance by selecting texture sub-region)
-    if (theme == "Blue Enchantment" || theme == "null" || theme == "") {
-        sTrail.setTextureRect(IntRect(120, 0, ts, ts));
-        sWall.setTextureRect(IntRect(180, 0, ts, ts));
-        sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
-    }
-    else if (theme == "Purple Universe") {
-        sTrail.setTextureRect(IntRect(60, 0, ts, ts));
-        sWall.setTextureRect(IntRect(210, 0, ts, ts));
-        sPlayer.setTextureRect(IntRect(120, 0, ts, ts));
-    }
-    else if (theme == "Green's Paradise") {
-        sTrail.setTextureRect(IntRect(30, 0, ts, ts));
-        sWall.setTextureRect(IntRect(60, 0, ts, ts));
-        sPlayer.setTextureRect(IntRect(150, 0, ts, ts));
-    }
-    else if (theme == "Crimson Depths") {
-        sTrail.setTextureRect(IntRect(180, 0, ts, ts));
-        sWall.setTextureRect(IntRect(120, 0, ts, ts));
-        sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
-    }
-    else if (theme == "Neon Mirage") {
-        sTrail.setTextureRect(IntRect(60, 0, ts, ts));
-        sWall.setTextureRect(IntRect(90, 0, ts, ts));
-        sPlayer.setTextureRect(IntRect(120, 0, ts, ts));
-    }
-    else if (theme == "Frozen Circuit") {
-        sTrail.setTextureRect(IntRect(30, 0, ts, ts));
-        sWall.setTextureRect(IntRect(210, 0, ts, ts));
-        sPlayer.setTextureRect(IntRect(150, 0, ts, ts));
-    }
-    else if (theme == "Tropical Pulse") {
-        sTrail.setTextureRect(IntRect(0, 0, ts, ts));
-        sWall.setTextureRect(IntRect(150, 0, ts, ts));
-        sPlayer.setTextureRect(IntRect(180, 0, ts, ts));
-    }
-    else if (theme == "Galactic Bloom") {
-        sTrail.setTextureRect(IntRect(180, 0, ts, ts));
-        sWall.setTextureRect(IntRect(120, 0, ts, ts));
-        sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
-    }
-    else if (theme == "Cyber Grove") {
-        sTrail.setTextureRect(IntRect(30, 0, ts, ts));
-        sWall.setTextureRect(IntRect(90, 0, ts, ts));
-        sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
-    }
-    else if (theme == "Solar Storm") {
-        sTrail.setTextureRect(IntRect(120, 0, ts, ts));
-        sWall.setTextureRect(IntRect(30, 0, ts, ts));
-        sPlayer.setTextureRect(IntRect(90, 0, ts, ts));
-    }
-    for (int i = 0;i < M;i++)
-        for (int j = 0;j < N;j++)
-        {
-            if (grid[i][j] == 0) {
-                continue;
-            }
-            if (grid[i][j] == 1) {
-                sWall.setPosition(j * ts, i * ts);
-                window.draw(sWall);
-            }
-            if (grid[i][j] == 2) {
-                sTrail.setPosition(j * ts, i * ts);
-                window.draw(sTrail);
-            }
+        // Apply theming using IntRects (changing appearance by selecting texture sub-region)
+        if (theme == "Blue Enchantment" || theme == "null" || theme == "") {
+            sTrail.setTextureRect(IntRect(120, 0, ts, ts));
+            sWall.setTextureRect(IntRect(180, 0, ts, ts));
+            sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
         }
-    Text display;
-    display.setFont(font);
-    display.setCharacterSize(20);
-    display.setPosition(5, 1);
-    display.setString("Player: " + profile->getPlayerName(1) + "          Score: " + to_string(score));
-    display.setFillColor(Color::Red);
-    window.draw(display);
-    profile->setScore(score);
-    sPlayer.setPosition(x * ts, y * ts);
-    window.draw(sPlayer);
+        else if (theme == "Purple Universe") {
+            sTrail.setTextureRect(IntRect(60, 0, ts, ts));
+            sWall.setTextureRect(IntRect(210, 0, ts, ts));
+            sPlayer.setTextureRect(IntRect(120, 0, ts, ts));
+        }
+        else if (theme == "Green's Paradise") {
+            sTrail.setTextureRect(IntRect(30, 0, ts, ts));
+            sWall.setTextureRect(IntRect(60, 0, ts, ts));
+            sPlayer.setTextureRect(IntRect(150, 0, ts, ts));
+        }
+        else if (theme == "Crimson Depths") {
+            sTrail.setTextureRect(IntRect(180, 0, ts, ts));
+            sWall.setTextureRect(IntRect(120, 0, ts, ts));
+            sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
+        }
+        else if (theme == "Neon Mirage") {
+            sTrail.setTextureRect(IntRect(60, 0, ts, ts));
+            sWall.setTextureRect(IntRect(90, 0, ts, ts));
+            sPlayer.setTextureRect(IntRect(120, 0, ts, ts));
+        }
+        else if (theme == "Frozen Circuit") {
+            sTrail.setTextureRect(IntRect(30, 0, ts, ts));
+            sWall.setTextureRect(IntRect(210, 0, ts, ts));
+            sPlayer.setTextureRect(IntRect(150, 0, ts, ts));
+        }
+        else if (theme == "Tropical Pulse") {
+            sTrail.setTextureRect(IntRect(0, 0, ts, ts));
+            sWall.setTextureRect(IntRect(150, 0, ts, ts));
+            sPlayer.setTextureRect(IntRect(180, 0, ts, ts));
+        }
+        else if (theme == "Galactic Bloom") {
+            sTrail.setTextureRect(IntRect(180, 0, ts, ts));
+            sWall.setTextureRect(IntRect(120, 0, ts, ts));
+            sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
+        }
+        else if (theme == "Cyber Grove") {
+            sTrail.setTextureRect(IntRect(30, 0, ts, ts));
+            sWall.setTextureRect(IntRect(90, 0, ts, ts));
+            sPlayer.setTextureRect(IntRect(60, 0, ts, ts));
+        }
+        else if (theme == "Solar Storm") {
+            sTrail.setTextureRect(IntRect(120, 0, ts, ts));
+            sWall.setTextureRect(IntRect(30, 0, ts, ts));
+            sPlayer.setTextureRect(IntRect(90, 0, ts, ts));
+        }
+        for (int i = 0;i < M;i++)
+            for (int j = 0;j < N;j++)
+            {
+                if (grid[i][j] == 0) {
+                    continue;
+                }
+                if (grid[i][j] == 1) {
+                    sWall.setPosition(j * ts, i * ts);
+                    window.draw(sWall);
+                }
+                if (grid[i][j] == 2) {
+                    sTrail.setPosition(j * ts, i * ts);
+                    window.draw(sTrail);
+                }
+            }
+        Text display;
+        display.setFont(font);
+        display.setCharacterSize(20);
+        display.setPosition(5, 1);
+        display.setString("Player: " + profile->getPlayerName(1) + "               Score: " + to_string(score));
+        display.setFillColor(Color::Red);
+        window.draw(display);
+        profile->setScore(score);
+        sPlayer.setPosition(x * ts, y * ts);
+        window.draw(sPlayer);
 
-    sEnemy.rotate(20);
-    for (int i = 0;i < enemyCount;i++)
-    {
-        sEnemy.setPosition(a[i].x, a[i].y);
-        window.draw(sEnemy);
+        sEnemy.rotate(20);
+        for (int i = 0;i < enemyCount;i++)
+        {
+            sEnemy.setPosition(a[i].x, a[i].y);
+            window.draw(sEnemy);
+        }
     }
-
-    if (!Game) window.draw(sGameover);
+    else {
+        window.draw(sGameover);
+        Text text;
+        text.setFont(font);
+        text.setString("Score :" + to_string(score));
+        text.setFillColor(Color::White);
+        text.setPosition(200, 400);
+        window.draw(text);
+        if (profile->getHighScore(1) == score) {
+            text.setString("This is your highest score!");
+            text.setPosition(200, 440);
+            window.draw(text);
+        }
+    }
+  
 }
 // Multiplayer Mode
 void MultiPlayerMode::handleEvents(Event& event) {

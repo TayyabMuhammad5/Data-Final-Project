@@ -128,6 +128,9 @@ public:
     void addTheme(string th) {
         players[currentPlayer1].theme = th;
     }
+    int  getHighScore(int num) {
+        return players[currentPlayer1].HighestScore;
+    }
     void scoring(int num, int pt) {
         if (num == 1) {
             players[currentPlayer1].score += pt;
@@ -419,7 +422,7 @@ private:
     Text* text1;
     Text* text2;
     int amount;
-    string number;
+    string number="";
     
     bool isAvailable = false;
 public:
@@ -584,13 +587,13 @@ private:
     Font font;
     int occurence = 0, threshold = 10, multiple = 2;
     Sprite sTrail, sWall, sPlayer;
-
+    int substate=0;
 public:
     SingularMode(PlayerProfile* player) : profile(player) {
         if (!font.loadFromFile("images/arial.ttf")) {
             std::cerr << "Could not load font.\n";
         }
-        score = profile->getScore(1);
+       
         t1.loadFromFile("images/tiles_30.png");
         t1.loadFromFile("images/tiles_30.png");
         t2.loadFromFile("images/gameover.png");
@@ -606,6 +609,9 @@ public:
         sEnemy.setOrigin(25, 25);
         delay = 0.07;
         timer = 0;
+        for (int i = 0;i < M;i++)
+            for (int j = 0;j < N;j++)
+                grid[i][j] = 0;
         for (int i = 0;i < N; i++) {
             grid[0][i] = -2;
         }
@@ -656,6 +662,9 @@ public:
         sEnemy.setOrigin(25, 25);
         delay = 0.07;
         timer = 0;
+        for (int i = 0;i < M;i++)
+            for (int j = 0;j < N;j++)
+                grid[i][j] = 0;
         for (int i = 1;i < M;i++)
             for (int j = 0;j < N;j++)
                 if (i == 1 || j == 0 || i == M - 1 || j == N - 1)  grid[i][j] = 1;
